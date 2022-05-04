@@ -83,6 +83,7 @@ fix_agency_name <- function(tbl) {
         agency_name == "Burlington County Sheriffs Off" ~ "Burlington Co Sheriffs Office",
         agency_name == "Mercer Co Prosecutor Offfice" ~ "Mercer Co Prosecutors Office",
         agency_name == "Hudson Co Prosecutor Office" ~ "Hudson Co Prosecutors Office",
+        agency_name == "Somerset County Sheriff's Office" ~ "Somerset Co Sheriffs Office",
         agency_name == "Totowa Boro  PD" ~ "Totowa Boro PD",
         agency_name == "New Jersey Institute Of Technol" ~ "New Jersey Institute Of Technology",
         agency_name == "NJ Div Criminal Justice - Trenton" ~ "NJ Division of Criminal Justice",
