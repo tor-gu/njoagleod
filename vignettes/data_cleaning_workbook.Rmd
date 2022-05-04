@@ -23,7 +23,7 @@ library(tidyr)
 library(njoaguof)
 ```
 
-## Read the raw data
+# Read the raw data
 ```{r}
 agency_2021_csv <- "2021 Law Enforcement Diversity Data-Agency Information.csv"
 officer_2021_csv <- "2021 Law Enforcement Diversity Data-Officer Information.csv"
@@ -34,7 +34,7 @@ officer_2021 <- system.file("extdata", officer_2021_csv, package="njoagleod") %>
   readr::read_csv()
 ```
 
-## Clean up the `agency` table
+# Clean up the `agency` table
 Rename the columns and add a year column.
 ```{r}
 agency <- agency_2021 %>%
@@ -46,7 +46,7 @@ agency <- agency_2021 %>%
   relocate(year)
 ```
 
-# `agency_county`
+## `agency_county`
 We want to use the same counties as the US census (and package `njoaguof`).
 In the source data, non-county agencies use "Statewide Or Regional LEA". as the
 county. We will map this to `NA`.  We put this in a function, because we will
@@ -67,7 +67,7 @@ fix_agency_county <- function(tbl) {
 
 agency <- agency %>% fix_agency_county()
 ```
-# `agency_name`
+## `agency_name`
 We want to use the same agency names as the `njoaguof` package, so we will
 do some cleanup here.  Because we need to do this for both the `agency` and
 `officer` tables, we put it in a function.
@@ -93,7 +93,7 @@ fix_agency_name <- function(tbl) {
 
 agency <- agency %>% fix_agency_name()
 ```
-# `agency_type`
+## `agency_type`
 There are four values we expect here. We encode this as a factor and
 check that there are no rows which don't match.
 ```{r}
@@ -105,7 +105,7 @@ agency <- agency %>%
 stopifnot(0 == agency %>% filter(is.na(agency_type)) %>% nrow())
 ```
 
-# `hiring_governed_by_civil_service`
+## `hiring_governed_by_civil_service`
 This is a yes/no field (with some inconsistency in captialization) which we convert to a boolean. `"Not provided"` and other values are mapped to `NA`. 
 ```{r}
 agency <- agency %>% 
@@ -118,7 +118,7 @@ agency <- agency %>%
   )) 
 ```
 
-## Clean up the `officer` table
+# Clean up the `officer` table
 Rename the columns and add a year column.
 ```{r}
 officer <- officer_2021 %>%
@@ -132,7 +132,7 @@ officer <- officer_2021 %>%
   relocate(year)
 ```
 
-# `agency_county` and `agency_name`
+## `agency_county` and `agency_name`
 We reuse the functions created to the `agency` table.
 ```{r}
 officer <- officer %>% 
@@ -140,10 +140,10 @@ officer <- officer %>%
   fix_agency_name()
 ```
 
-# `officer_age`
+## `officer_age`
 No change.
 
-# `officer_race`
+## `officer_race`
 We use the same levels as the `njoaguof` package, mapping `"Not provided"` to 
 `NA`.  We will do a check to make sure that we are not missing any values when
 we do this mapping.
@@ -175,7 +175,7 @@ stopifnot(
 )
 ```
 
-# `officer_gender`
+## `officer_gender`
 We will use this same levels as the `njoaguof` package, mapping `"No Provided"` to `NA`. We will do a check to make sure that we are not missing any values when we do this mapping.
 ```{r}
 # Save this value for the check at the end
