@@ -227,3 +227,68 @@ officer <- officer %>% filter(agency_name != drbapd |
                                  agency_county == "Salem County"))
 officer$agency_county[officer$agency_name == drbapd] <- NA
 ```
+## Integrity check: uniqueness of primary key in `agency` table
+Each combination of `year`, `agency_county` and `agency_name` should appear at most one time.
+```{r}
+stopifnot(
+  0 ==
+    agency %>%
+    group_by(year, agency_county, agency_name) %>%
+    count() %>%
+    filter(n > 1) %>%
+    nrow()
+)
+```
+## Integrity check: foreign key in `officer` table
+Every `year`, `agency_county` and `agency_name` appearing in `officer` should
+also appear in `agency`.
+```{r}
+stopifnot(
+  0 ==
+    officer %>%
+    select(year, agency_county, agency_name) %>%
+    unique() %>%
+    anti_join(agency, by = names(.)) %>%
+    nrow()
+)
+```
+
+## Integrity check: Every agency has at least one officer
+For every `year`, `agency_county` and `agency_name` combination appearing in
+the `agency` table, check that there is at least one entry in the `officer` table.
+```{r}
+stopifnot(
+  0 ==
+    agency %>%
+    select(year, agency_county, agency_name) %>%
+    anti_join(officer, by = names(.)) %>%
+    nrow()
+)
+```
+
+## Consistency with `njoaguof`.
+Ideally, every agency in the `njoaguof` package would be reflected in the
+the `agency` table.  However, the NJ OAG LEOD dataset excludes corrections 
+officers. And even after we filter out corrections officers from the 
+`njoaguof` dataset, there are still some missing agencies. 
+
+Let's check that the only missing agencies are the various corrections 
+departments, plus a short list of known exceptions.
+```{r}
+stopifnot(
+  njoaguof::incident %>%
+    select(agency_county, agency_name) %>%
+    unique() %>%
+    anti_join(agency, by = names(.)) %>%
+    filter(!str_detect(agency_name, "Corrections")) %>%
+    pull(agency_name) %in%
+    c(
+      "Freehold Boro PD",
+      "Washington Twp PD",
+      "Park Police",
+      "College Of New Jersey",
+      "State Parole Board"
+    ) %>%
+    all()
+)
+```
