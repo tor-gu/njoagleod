@@ -161,3 +161,26 @@ stopifnot(
     officer %>% filter(is.na(officer_gender)) %>% nrow()
 )
 
+
+## ---------------------------------------------------------------------------------
+drbapd <- "Delaware River and Bay Authority Police Department"
+agency %>% filter(agency_name==drbapd)
+officer %>% filter(agency_name==drbapd) %>% 
+  group_by(agency_county) %>%
+  count()
+
+
+## ---------------------------------------------------------------------------------
+# In agency, filter out the non-Salem County DRBA agencies.
+agency <- agency %>% filter(agency_name != drbapd |
+                    (agency_name == drbapd &
+                       agency_county == "Salem County"))
+# Now replace Salem County with NA
+agency$agency_county[agency$agency_name == drbapd] <- NA
+
+# Now do the same for the officer table
+officer <- officer %>% filter(agency_name != drbapd |
+                              (agency_name == drbapd &
+                                 agency_county == "Salem County"))
+officer$agency_county[officer$agency_name == drbapd] <- NA
+
