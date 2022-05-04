@@ -43,4 +43,8 @@ jobs:
         with:
           extra-packages: rcmdcheck
 
+      - name: Install dependencies
+        run: |
+          remotes::install_github("https://github.com/tor-gu/njoaguof")
+
       - uses: r-lib/actions/check-r-package@v1
