@@ -1,0 +1,77 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# njoagleod
+
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/tor-gu/njoaguof/workflows/R-CMD-check/badge.svg)](https://github.com/tor-gu/njoagleod/actions)<!-- badges: end -->
+
+This is a cleaned-up version of the NJ OAG Law Enforcment Officer Diversity 
+  database available from https://www.njoag.gov/policerecruiting/
+
+## Dataset Overview
+This dataset contains two tables.
+
+* ```agency``` Has one row for each law enforcement agency, for each year
+* ```officer``` Has one row for each officer, for each year.
+
+Currently 2021 is the only year represented.
+
+## Examples
+The ```agency``` table looks like this:
+```{r}
+library(tidyverse)
+library(njoagleod)
+agency
+```
+The columns ```year```, ```agency_county``` and ```agency_name``` form the primary key.  
+
+The ```officer``` table looks like this.
+```{r}
+officer
+```
+The columns ```year```, ```agency_county``` and ```agency_name``` act as a foreign
+key to the ```agency``` table.
+
+The ```agency_name``` and ```agency_county``` columns are consistent with the columns
+of the same name in the associated [```njoaguof```](https://github.com/tor-gu/njoaguof) package.  Here are the agencies with the highest number of use-of-force incidents per officer.
+```{r}
+officer %>% 
+  group_by(year, agency_county, agency_name) %>%
+  summarize(officer_count = n(), .groups = "drop") %>%
+  left_join(njoaguof::incident, by=c("agency_county", "agency_name")) %>%
+  filter(lubridate::year(incident_date_1)==year) %>%
+  group_by(year, agency_county, agency_name, officer_count) %>%
+  summarize(incident_count = n(), .groups="drop") %>%
+  mutate(incidents_per_officer = incident_count / officer_count) %>%
+  arrange(desc(incidents_per_officer))
+```
+
+## Notes
+
+### Duplicates entries removed
+In the source data, The Delaware River and Bay Authority Police Department and its officers appear twice, once associated to Salem County and once associated to Cape May County. 
+
+In this package, we have removed the duplicate entries and assigned the county to `NA`.  As a result, the source data has ```30505``` officers across ```528``` agencies, while this package contains ```30443``` officers and ```527``` agencies.
+
+## Installation
+
+You can install the latest version of njoaguof from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("tor-gu/njoagleod")
+```
+
