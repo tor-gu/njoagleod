@@ -43,8 +43,10 @@ jobs:
         with:
           extra-packages: rcmdcheck
 
-      - name: Install dependencies
+      - name: Install njoaguof
         run: |
-          remotes::install_github("https://github.com/tor-gu/njoaguof")
+          install.packages('remotes')
+          remotes::install_github('https://github.com/tor-gu/njoaguof')
+        shell: Rscript {0}
 
       - uses: r-lib/actions/check-r-package@v1
