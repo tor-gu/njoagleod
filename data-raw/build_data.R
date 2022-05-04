@@ -15,8 +15,8 @@ library(njoaguof)
 
 
 ## ---------------------------------------------------------------------------------
-agency_2021_csv <- "2021 Law Enforcement Diversity Data-Agency Information.csv"
-officer_2021_csv <- "2021 Law Enforcement Diversity Data-Officer Information.csv"
+agency_2021_csv <- "2021_NJOAGLEOD_Agency_Information.csv"
+officer_2021_csv <- "2021_NJOAGLEOD_Officer_Information.csv"
 
 agency_2021 <- system.file("extdata", agency_2021_csv, package="njoagleod") %>%
   readr::read_csv()

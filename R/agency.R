@@ -13,5 +13,5 @@
 #'  "Municipal", "Multiple Municipalities" and "Not Provided"}
 #'  \item{hiring_governed_by_civil_service}{A boolean field. `NA` if not provided.}
 #' }
-#' @source \url{}
+#' @source \url{https://www.njoag.gov/policerecruiting/}
 "agency"

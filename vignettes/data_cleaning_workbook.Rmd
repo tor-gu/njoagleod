@@ -2,7 +2,7 @@
 title: "NJ OAG Law Enforcement Officer Diversity data cleaning workbook"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{NJ OAG Use of force data cleaning workbook}
+  %\VignetteIndexEntry{NJ OAG Law Enforcement Officer Diversity data cleaning workbook}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -25,8 +25,8 @@ library(njoaguof)
 
 # Read the raw data
 ```{r}
-agency_2021_csv <- "2021 Law Enforcement Diversity Data-Agency Information.csv"
-officer_2021_csv <- "2021 Law Enforcement Diversity Data-Officer Information.csv"
+agency_2021_csv <- "2021_NJOAGLEOD_Agency_Information.csv"
+officer_2021_csv <- "2021_NJOAGLEOD_Officer_Information.csv"
 
 agency_2021 <- system.file("extdata", agency_2021_csv, package="njoagleod") %>%
   readr::read_csv()

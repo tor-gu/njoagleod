@@ -16,7 +16,7 @@ A dataframe with 5 columns
 }
 }
 \source{
-\url{}
+\url{https://www.njoag.gov/policerecruiting/}
 }
 \usage{
 agency
@@ -25,7 +25,7 @@ agency
 Agency records from the NJ OAG Law Enforcement Officer Diversity data set.
 }
 \details{
-The first three columns, `year`, `agency_county` and `agency_name` serve
+The first three columns -- `year`, `agency_county` and `agency_name` -- serve
 as the primary key.
 }
 \keyword{datasets}
