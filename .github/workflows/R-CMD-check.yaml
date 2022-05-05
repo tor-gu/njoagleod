@@ -41,7 +41,7 @@ jobs:
 
       - name: Install njoaguof and other dependencies.
         run: |
-          install.packages('remotes')
+          install.packages('remotes', 'rcmdcheck')
           remotes::install_deps(dependencies = TRUE)
           remotes::install_github('https://github.com/tor-gu/njoaguof')
         shell: Rscript {0}
