@@ -39,14 +39,11 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
-      - name: Install njoaguof
+      - name: Install njoaguof and other dependencies.
         run: |
           install.packages('remotes')
+          remotes::install_deps(dependencies = TRUE)
           remotes::install_github('https://github.com/tor-gu/njoaguof')
         shell: Rscript {0}
-
-      - uses: r-lib/actions/setup-r-dependencies@v1
-        with:
-          extra-packages: rcmdcheck
 
       - uses: r-lib/actions/check-r-package@v1
