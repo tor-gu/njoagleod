@@ -1,7 +1,7 @@
 Package: njoagleod
 Type: Package
 Title: NJ OAG Law Enforcement Officer Diversity data package
-Version: 0.1.0.9000
+Version: 1.0.0
 Authors@R: 
     person("Tor", "Gunston", , "tor.gunston@protonmail.com", role = c("aut", "cre"))
 Description: This is cleaned-up version of the NJ OAG Law Enforcement Officer 
