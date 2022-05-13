@@ -115,8 +115,8 @@ Department and its officers appear twice, once associated to Salem
 County and once associated to Cape May County.
 
 In this package, we have removed the duplicate entries and assigned the
-county to `NA`. As a result, the source data has `30505` officers across
-`528` agencies, while this package contains `30443` officers and `527`
+county to `NA`. As a result, the source data has `30617` officers across
+`530` agencies, while this package contains `30565` officers and `529`
 agencies.
 
 ## Installation
