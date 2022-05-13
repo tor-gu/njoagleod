@@ -33,8 +33,8 @@ Currently 2021 is the only year represented.
 ## Examples
 The ```agency``` table looks like this:
 ```{r}
-library(tidyverse)
 library(njoagleod)
+library(tidyverse)
 agency
 ```
 The columns ```year```, ```agency_county``` and ```agency_name``` form the primary key.  
@@ -47,7 +47,9 @@ The columns ```year```, ```agency_county``` and ```agency_name``` act as a forei
 key to the ```agency``` table.
 
 The ```agency_name``` and ```agency_county``` columns are consistent with the columns
-of the same name in the associated [```njoaguof```](https://github.com/tor-gu/njoaguof) package.  Here are the agencies with the highest number of use-of-force incidents per officer.
+of the same name in the associated [```njoaguof```](https://github.com/tor-gu/njoaguof) package so that they may be easily used together.  
+
+For example, here are the agencies with the highest number of use-of-force incidents per officer.
 ```{r}
 officer %>% 
   group_by(year, agency_county, agency_name) %>%
@@ -57,6 +59,7 @@ officer %>%
   group_by(year, agency_county, agency_name, officer_count) %>%
   summarize(incident_count = n(), .groups="drop") %>%
   mutate(incidents_per_officer = incident_count / officer_count) %>%
+  select(-agency_county) %>%
   arrange(desc(incidents_per_officer))
 ```
 

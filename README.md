@@ -26,8 +26,8 @@ Currently 2021 is the only year represented.
 The `agency` table looks like this:
 
 ``` r
-library(tidyverse)
 library(njoagleod)
+library(tidyverse)
 agency
 #> # A tibble: 527 × 5
 #>     year agency_county   agency_name                agency_type hiring_governed…
@@ -73,8 +73,11 @@ key to the `agency` table.
 
 The `agency_name` and `agency_county` columns are consistent with the
 columns of the same name in the associated
-[`njoaguof`](https://github.com/tor-gu/njoaguof) package. Here are the
-agencies with the highest number of use-of-force incidents per officer.
+[`njoaguof`](https://github.com/tor-gu/njoaguof) package so that they
+may be easily used together.
+
+For example, here are the agencies with the highest number of
+use-of-force incidents per officer.
 
 ``` r
 officer %>% 
@@ -85,20 +88,21 @@ officer %>%
   group_by(year, agency_county, agency_name, officer_count) %>%
   summarize(incident_count = n(), .groups="drop") %>%
   mutate(incidents_per_officer = incident_count / officer_count) %>%
+  select(-agency_county) %>%
   arrange(desc(incidents_per_officer))
-#> # A tibble: 467 × 6
-#>     year agency_county agency_name officer_count incident_count incidents_per_o…
-#>    <dbl> <fct>         <chr>               <int>          <int>            <dbl>
-#>  1  2021 Cape May Cou… North Wild…            27             68             2.52
-#>  2  2021 Ocean County  Seaside He…            25             56             2.24
-#>  3  2021 Cape May Cou… Wildwood PD            44             97             2.20
-#>  4  2021 Middlesex Co… South Rive…            32             65             2.03
-#>  5  2021 Burlington C… Willingbor…            62            124             2   
-#>  6  2021 Cumberland C… Millville …            80            154             1.92
-#>  7  2021 <NA>          New Jersey…           301            536             1.78
-#>  8  2021 Ocean County  Tuckerton …            13             22             1.69
-#>  9  2021 Camden County Stratford …            19             31             1.63
-#> 10  2021 Cape May Cou… Middle Twp…            54             88             1.63
+#> # A tibble: 467 × 5
+#>     year agency_name               officer_count incident_count incidents_per_o…
+#>    <dbl> <chr>                             <int>          <int>            <dbl>
+#>  1  2021 North Wildwood City PD               27             68             2.52
+#>  2  2021 Seaside Heights PD                   25             56             2.24
+#>  3  2021 Wildwood PD                          44             97             2.20
+#>  4  2021 South River PD                       32             65             2.03
+#>  5  2021 Willingboro PD                       62            124             2   
+#>  6  2021 Millville PD                         80            154             1.92
+#>  7  2021 New Jersey Transit Police           301            536             1.78
+#>  8  2021 Tuckerton Boro PD                    13             22             1.69
+#>  9  2021 Stratford Boro PD                    19             31             1.63
+#> 10  2021 Middle Twp PD                        54             88             1.63
 #> # … with 457 more rows
 ```
 
