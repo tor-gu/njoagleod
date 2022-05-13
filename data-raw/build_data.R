@@ -228,7 +228,6 @@ stopifnot(
     c(
       "Freehold Boro PD",
       "Washington Twp PD",
-      "Park Police",
       "College Of New Jersey",
       "State Parole Board"
     ) %>%

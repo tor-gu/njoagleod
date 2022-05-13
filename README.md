@@ -8,7 +8,7 @@
 [![R-CMD-check](https://github.com/tor-gu/njoagleod/workflows/R-CMD-check/badge.svg)](https://github.com/tor-gu/njoagleod/actions)
 <!-- badges: end -->
 
-This is a cleaned-up version of the NJ OAG Law Enforcment Officer
+This is a cleaned-up version of the NJ OAG Law Enforcement Officer
 Diversity database available from
 <https://www.njoag.gov/policerecruiting/>
 
