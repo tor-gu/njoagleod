@@ -127,7 +127,7 @@ officer <- officer_2021 %>%
          agency_name=Agency,
          officer_age=Age,
          officer_race=`Race/Ethnicity`,
-         officer_gender=Gender2
+         officer_gender=Gender
          ) %>%
   mutate(year=2021) %>% 
   relocate(year)
