@@ -1,3 +1,7 @@
+# njoagleod 1.1.1
+
+* Updated consistency checks with njoaguof. No data changes.
+
 # njoagleod 1.1.0
 
 * Added a `NEWS.md` file to track changes to the package.
