@@ -1,4 +1,4 @@
-County,Agency,Age,Race/Ethnicity,Gender2
+County,Agency,Age,Race/Ethnicity,Gender
 Atlantic,Absecon City PD,20,White,Male
 Atlantic,Absecon City PD,22,White,Male
 Atlantic,Absecon City PD,26,Black or African American,Male
@@ -24362,6 +24362,84 @@ Statewide or Regional LEA,Juvenile Justice Commission,62,Black or African Americ
 Statewide or Regional LEA,Juvenile Justice Commission,64,White,Male
 Statewide or Regional LEA,Juvenile Justice Commission,65,Black or African American,Male
 Statewide or Regional LEA,Juvenile Justice Commission,69,Black or African American,Male
+Statewide or Regional LEA,New Jersey State Park Police,32,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,50,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,51,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,44,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,45,Black or African American,Male
+Statewide or Regional LEA,New Jersey State Park Police,41,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,44,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,44,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,44,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,41,Hispanic,Female
+Statewide or Regional LEA,New Jersey State Park Police,24,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,59,Hispanic,Male
+Statewide or Regional LEA,New Jersey State Park Police,49,White,Female
+Statewide or Regional LEA,New Jersey State Park Police,39,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,29,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,44,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,34,White,Female
+Statewide or Regional LEA,New Jersey State Park Police,48,White,Female
+Statewide or Regional LEA,New Jersey State Park Police,36,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,38,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,46,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,49,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,57,Hispanic,Male
+Statewide or Regional LEA,New Jersey State Park Police,44,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,26,Hispanic,Female
+Statewide or Regional LEA,New Jersey State Park Police,52,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,40,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,53,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,28,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,40,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,54,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,35,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,45,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,35,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,45,Hispanic,Male
+Statewide or Regional LEA,New Jersey State Park Police,48,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,42,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,41,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,41,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,43,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,33,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,39,White,Female
+Statewide or Regional LEA,New Jersey State Park Police,44,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,45,White,Female
+Statewide or Regional LEA,New Jersey State Park Police,40,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,44,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,47,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,64,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,32,White,Female
+Statewide or Regional LEA,New Jersey State Park Police,39,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,39,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,37,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,34,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,51,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,56,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,34,Hispanic,Male
+Statewide or Regional LEA,New Jersey State Park Police,29,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,47,Hispanic,Male
+Statewide or Regional LEA,New Jersey State Park Police,51,White,Female
+Statewide or Regional LEA,New Jersey State Park Police,48,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,43,White,Female
+Statewide or Regional LEA,New Jersey State Park Police,30,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,42,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,56,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,52,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,56,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,42,Hispanic,Male
+Statewide or Regional LEA,New Jersey State Park Police,34,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,24,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,41,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,45,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,32,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,40,White,Female
+Statewide or Regional LEA,New Jersey State Park Police,26,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,37,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,51,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,33,White,Male
+Statewide or Regional LEA,New Jersey State Park Police,34,White,Male
 Statewide or Regional LEA,New Jersey State Police,23,White,Male
 Statewide or Regional LEA,New Jersey State Police,23,White,Male
 Statewide or Regional LEA,New Jersey State Police,23,Black or African American,Male
@@ -28521,57 +28599,57 @@ Union,Berkeley Heights PD,50,White,Male
 Union,Berkeley Heights PD,51,White,Male
 Union,Berkeley Heights PD,53,White,Male
 Union,Berkeley Heights PD,55,White,Male
-Union,Clark PD,26,White,Male
-Union,Clark PD,28,White,Male
-Union,Clark PD,28,White,Female
-Union,Clark PD,28,White,Male
-Union,Clark PD,28,White,Male
-Union,Clark PD,28,White,Male
-Union,Clark PD,29,White,Male
-Union,Clark PD,29,Black or African American,Male
-Union,Clark PD,29,White,Male
-Union,Clark PD,29,White,Male
-Union,Clark PD,30,White,Male
-Union,Clark PD,30,White,Male
-Union,Clark PD,30,White,Male
-Union,Clark PD,30,White,Male
-Union,Clark PD,31,White,Female
-Union,Clark PD,32,White,Male
-Union,Clark PD,33,White,Male
-Union,Clark PD,34,Asian,Male
-Union,Clark PD,34,White,Male
-Union,Clark PD,34,White,Male
-Union,Clark PD,35,White,Male
-Union,Clark PD,35,White,Male
-Union,Clark PD,35,White,Male
-Union,Clark PD,36,White,Male
-Union,Clark PD,36,White,Male
-Union,Clark PD,36,White,Male
-Union,Clark PD,36,Black or African American,Male
-Union,Clark PD,36,White,Male
-Union,Clark PD,36,White,Male
-Union,Clark PD,37,White,Male
-Union,Clark PD,37,White,Male
-Union,Clark PD,37,White,Male
-Union,Clark PD,38,White,Male
-Union,Clark PD,39,White,Male
 Union,Clark PD,40,White,Male
-Union,Clark PD,40,White,Male
-Union,Clark PD,41,White,Male
-Union,Clark PD,42,White,Male
-Union,Clark PD,43,White,Male
-Union,Clark PD,44,White,Male
-Union,Clark PD,45,White,Male
-Union,Clark PD,45,White,Male
-Union,Clark PD,46,White,Male
-Union,Clark PD,49,White,Male
-Union,Clark PD,51,White,Male
-Union,Clark PD,52,White,Male
-Union,Clark PD,56,White,Male
-Union,Clark PD,57,White,Male
+Union,Clark PD,28,White,Male
 Union,Clark PD,59,White,Male
+Union,Clark PD,34,Asian,Male
+Union,Clark PD,35,White,Male
+Union,Clark PD,51,White,Male
+Union,Clark PD,29,Hispanic,Male
+Union,Clark PD,29,Black or African American,Male
+Union,Clark PD,39,White,Male
+Union,Clark PD,35,White,Male
+Union,Clark PD,38,White,Male
+Union,Clark PD,30,White,Male
+Union,Clark PD,42,White,Male
+Union,Clark PD,45,White,Male
+Union,Clark PD,34,Hispanic,Male
+Union,Clark PD,30,White,Male
+Union,Clark PD,40,White,Male
+Union,Clark PD,28,White,Female
+Union,Clark PD,29,White,Male
+Union,Clark PD,26,White,Male
+Union,Clark PD,36,White,Male
+Union,Clark PD,49,White,Male
+Union,Clark PD,30,Hispanic,Male
+Union,Clark PD,37,White,Male
+Union,Clark PD,28,White,Male
+Union,Clark PD,35,White,Male
+Union,Clark PD,34,White,Male
+Union,Clark PD,43,White,Male
+Union,Clark PD,36,Hispanic,Male
+Union,Clark PD,41,Hispanic,Male
+Union,Clark PD,30,White,Male
+Union,Clark PD,37,White,Male
+Union,Clark PD,36,White,Male
+Union,Clark PD,31,White,Female
+Union,Clark PD,36,Black or African American,Male
+Union,Clark PD,29,Hispanic,Male
+Union,Clark PD,28,Hispanic,Male
+Union,Clark PD,33,White,Male
+Union,Clark PD,45,White,Male
+Union,Clark PD,36,White,Male
+Union,Clark PD,37,Hispanic,Male
+Union,Clark PD,36,White,Male
+Union,Clark PD,44,White,Male
+Union,Clark PD,46,White,Male
+Union,Clark PD,28,Hispanic,Male
+Union,Clark PD,52,White,Male
+Union,Clark PD,57,White,Male
 Union,Clark PD,60,White,Male
 Union,Clark PD,60,White,Male
+Union,Clark PD,32,White,Male
+Union,Clark PD,56,White,Male
 Union,Cranford PD,21,White,Female
 Union,Cranford PD,23,Hispanic,Male
 Union,Cranford PD,23,White,Male
@@ -30504,3 +30582,37 @@ Warren,Warren Co Sheriff'S Dept,57,White,Male
 Warren,Warren Co Sheriff'S Dept,58,White,Male
 Warren,Warren Co Sheriff'S Dept,60,White,Male
 Warren,Warren Co Sheriff'S Dept,60,White,Male
+Warren,Washington Park PD,46,White,Male
+Warren,Washington Park PD,31,White,Female
+Warren,Washington Park PD,40,White,Male
+Warren,Washington Park PD,44,White,Male
+Warren,Washington Park PD,52,Black or African American,Male
+Warren,Washington Park PD,39,White,Male
+Warren,Washington Park PD,62,White,Male
+Warren,Washington Park PD,32,White,Male
+Warren,Washington Park PD,33,White,Male
+Warren,Washington Park PD,59,White,Male
+Warren,Washington Park PD,44,White,Male
+Warren,Washington Park PD,51,White,Male
+Warren,Washington Park PD,52,White,Male
+Warren,Washington Park PD,33,Two or more races,Male
+Warren,Washington Park PD,30,White,Male
+Warren,Washington Park PD,43,White,Male
+Warren,Washington Park PD,46,White,Male
+Warren,Washington Park PD,56,White,Male
+Warren,Washington Park PD,30,White,Male
+Warren,Washington Park PD,30,White,Male
+Warren,Washington Park PD,56,White,Male
+Warren,Washington Park PD,29,White,Male
+Warren,Washington Park PD,48,White,Male
+Warren,Washington Park PD,58,White,Male
+Warren,Washington Park PD,45,White,Male
+Warren,Washington Park PD,24,White,Male
+Warren,Washington Park PD,30,White,Male
+Warren,Washington Park PD,56,White,Male
+Warren,Washington Park PD,33,White,Male
+Warren,Washington Park PD,44,White,Male
+Warren,Washington Park PD,25,White,Male
+Warren,Washington Park PD,53,White,Male
+Warren,Washington Park PD,45,White,Male
+Warren,Washington Park PD,47,White,Male
