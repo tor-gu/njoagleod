@@ -87,6 +87,9 @@ fix_agency_name <- function(tbl) {
         agency_name == "Totowa Boro  PD" ~ "Totowa Boro PD",
         agency_name == "New Jersey Institute Of Technol" ~ "New Jersey Institute Of Technology",
         agency_name == "NJ Div Criminal Justice - Trenton" ~ "NJ Division of Criminal Justice",
+        agency_name == "Toms River Township" ~ "Toms River Twp PD",
+        agency_name == "Hardyston Twp Police Dept" ~ "Hardyston Twp PD",
+        agency_name == "Linden Police Department" ~ "Linden PD",
         TRUE ~ agency_name
       )
     )
@@ -117,6 +120,124 @@ agency <- agency %>%
     hiring_governed_by_civil_service == "no" ~ FALSE,
     TRUE ~ NA
   )) 
+```
+
+## For municipal agencies, add `agency_municipality`, if possible
+Most municipal agency names are of the form `<town-name> PD`, but the `<town-name` does not match exactly with the name in the US census. We want to add the US Census name if it can be determined from the agency name.
+
+First, lets verify that the the rule that municipal agency names end in "PD" has only three exceptions:
+```{r}
+stopifnot(
+  setequal(
+    agency %>% 
+      filter(agency_type == "Municipal") %>%
+      filter(!str_detect(agency_name, "PD$")) %>%
+      pull(agency_name),
+    c("Cherry Hill Campus Police", 
+      "Stevens Institute Of Technology", 
+      "Princeton University Police")
+  )
+)
+```
+Next, lets initialize a lookup table which we will fill up incrementally.  We include only municipal agencies that end in "PD". We temporarily add the column `agency_no_pd`, which is just the agency name minus the "PD" extension.
+```{r}
+municipality_lookup <- agency %>% 
+  filter(agency_type == "Municipal") %>%
+  filter(str_detect(agency_name, " PD$")) %>%
+  mutate(agency_no_pd = str_remove(agency_name, " PD$")) %>%
+  mutate(municipality = NA_character_) %>%
+  select(agency_county, agency_name, agency_no_pd, municipality)
+municipality_lookup
+```
+The following function will take a partially filled in `municipality_lookup` table with an added column -- `test_municipality` -- and compare it to the `municipality` table. Any matching row will be updated.
+
+```{r}
+add_test_municipalities <- function(municipality_lookup) {
+  municipality_lookup %>% 
+    filter(is.na(municipality)) %>%
+    select(agency_name, county=agency_county, municipality=test_municipality) %>%
+    inner_join(njoagleod::municipality, by=c("county", "municipality")) %>%
+    right_join(municipality_lookup, by=c("agency_name", "county"="agency_county")) %>%
+    mutate(municipality = if_else(
+      is.na(municipality.y), 
+      municipality.x, 
+      municipality.y)) %>%
+    select(agency_county=county, agency_name, agency_no_pd, municipality)
+}
+```
+Now we try variations on the `agency_no_pd` column to fill out the `municipality_lookup` table.  We leave in the commented out `filter(is.na(municipality))` lines to emphasize the iterative nature of this step.
+```{r}
+municipality_lookup <- municipality_lookup %>% 
+  #filter(is.na(municipality))
+  mutate(test_municipality = paste0(agency_no_pd, " city")) %>%
+  add_test_municipalities() %>% 
+  #filter(is.na(municipality))
+  mutate(test_municipality = paste0(agency_no_pd, " township")) %>%
+  add_test_municipalities() %>% 
+  #filter(is.na(municipality))
+  mutate(test_municipality = paste0(agency_no_pd, " town")) %>%
+  add_test_municipalities() %>% 
+  #filter(is.na(municipality))
+  mutate(test_municipality = paste0(agency_no_pd, " village")) %>%
+  add_test_municipalities() %>% 
+  #filter(is.na(municipality))
+  mutate(test_municipality = paste0(agency_no_pd, " borough")) %>%
+  add_test_municipalities() %>% 
+  #filter(is.na(municipality))
+  mutate(test_municipality = str_replace(agency_no_pd, "City", "city")) %>%
+  add_test_municipalities() %>% 
+  #filter(is.na(municipality))
+  mutate(test_municipality = str_replace(agency_no_pd, "Twp", "township")) %>%
+  add_test_municipalities() %>% 
+  #filter(is.na(municipality))
+  mutate(test_municipality = str_replace(agency_no_pd, "Boro", "borough")) %>%
+  add_test_municipalities() %>% 
+  #filter(is.na(municipality))
+  mutate(test_municipality = str_replace(agency_no_pd, "Town", "town")) %>%
+  add_test_municipalities() %>% 
+  #filter(is.na(municipality))
+  mutate(test_municipality = str_replace(agency_no_pd, "Village", "village")) %>%
+  add_test_municipalities() %>% 
+  #filter(is.na(municipality))
+  mutate(test_municipality = paste0(agency_no_pd, " City city")) %>%
+  add_test_municipalities()
+```
+For most of the remaining municipalities, we can set the `municipality` manually.
+```{r}
+municipality_lookup <- municipality_lookup %>% 
+  mutate(municipality = case_when(
+    agency_name == "Mt. Ephraim PD" ~ "Mount Ephraim borough",
+    agency_name == "Orange PD" ~ "City of Orange township",
+    agency_name == "South Orange PD" ~ "South Orange Village township",
+    agency_name == "Avon-By-The-Sea PD" ~ "Avon-by-the-Sea borough",
+    agency_name == "Bayhead Boro PD" ~ "Bay Head borough",
+    agency_name == "Oceangate Boro PD" ~ "Ocean Gate borough",
+    agency_name == "Peapack-Gladstone PD" ~ "Peapack and Gladstone borough",
+    TRUE ~ municipality
+  ))
+```
+At this point, there are two known exceptional agencies left. Let us remove them and then verify that the table is complete, and that every municipality in the lookup table is found in the `municipality` table.  We also don't need the `agency_no_pd` column anymore, so we will remove it.
+```{r}
+municipality_lookup <- municipality_lookup %>% 
+  filter(!(agency_name %in%
+             c("Monmouth University PD",
+               "Washington Park PD"))) %>%
+  select(-agency_no_pd)
+
+# Check there are no mor NAs
+stopifnot(0 ==
+            municipality_lookup %>% filter(is.na(municipality)) %>% nrow())
+
+# Check that every municipality is in the lookup table
+stopifnot(0 ==
+            municipality_lookup %>%
+            anti_join(njoagleod::municipality, by = c("agency_county" = "county", "municipality")) %>%
+            nrow())
+```
+Finally, we can use the lookup table to add a `municipality` column to the agency table.
+```{r}
+agency <- agency %>% 
+  left_join(municipality_lookup, by=c("agency_county", "agency_name"))
 ```
 
 # Clean up the `officer` table
@@ -283,6 +404,9 @@ stopifnot(
     filter(!str_detect(agency_name, "Corrections")) %>%
     pull(agency_name) %in%
     c(
+      "Toms River Township",
+      "Hardyston Twp Police Dept",
+      "Linden Police Department",
       "Freehold Boro PD",
       "Washington Twp PD",
       "College Of New Jersey",
