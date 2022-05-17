@@ -1,4 +1,13 @@
 # njoagleod 1.1.2
+* Changed three agency names for consistency
+
+  - "Toms River Township" --> "Toms River Twp PD"
+  - "Hardyston Twp Police Dept" --> "Hardyston Twp PD"
+  - "Linden Police Department" --> "Linden PD"
+
+* Added `municipality` table.
+
+* Added `municipality` column to `agency` table.
 
 # njoagleod 1.1.1
 
