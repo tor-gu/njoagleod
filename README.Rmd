@@ -70,6 +70,12 @@ In the source data, The Delaware River and Bay Authority Police Department and i
 
 In this package, we have removed the duplicate entries and assigned the county to `NA`.  As a result, the source data has ```30617``` officers across ```530``` agencies, while this package contains ```30565``` officers and ```529``` agencies.
 
+### Chester PD `agency_type` changed to `"Multiple Municipality"`
+In the source data, Chester PD is listed as a municipal agency, but it is a 
+multiple municipality agency. In this package, the agency type has been changed to "Multiple Municipality".
+
+Source: [Former site of the Chester Borough Police](https://chesterborough.org/departments/chester-borough-police/)
+
 ## Installation
 
 You can install the latest version of njoaguof from [GitHub](https://github.com/) with:

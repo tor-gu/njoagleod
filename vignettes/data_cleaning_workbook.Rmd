@@ -109,6 +109,17 @@ agency <- agency %>%
 stopifnot(0 == agency %>% filter(is.na(agency_type)) %>% nrow())
 ```
 
+The Chester Police Department is incorrectly classified as municipal. It is a
+multi-municipality agency covering Chester Borough and Chester Township. We make
+that correction here.
+```{r}
+agency <- agency %>%
+  mutate(agency_type = if_else(
+    agency_name == "Chester PD", 
+    factor("Multiple Municipalities", agency_type_levels), agency_type))
+```
+
+
 ## `hiring_governed_by_civil_service`
 This is a yes/no field (with some inconsistency in captialization) which we convert to a boolean. `"Not provided"` and other values are mapped to `NA`. 
 ```{r}
@@ -172,9 +183,6 @@ municipality_lookup <- municipality_lookup %>%
   mutate(test_municipality = paste0(agency_no_pd, " city")) %>%
   add_test_municipalities() %>% 
   #filter(is.na(municipality))
-  mutate(test_municipality = paste0(agency_no_pd, " township")) %>%
-  add_test_municipalities() %>% 
-  #filter(is.na(municipality))
   mutate(test_municipality = paste0(agency_no_pd, " town")) %>%
   add_test_municipalities() %>% 
   #filter(is.na(municipality))
@@ -182,6 +190,9 @@ municipality_lookup <- municipality_lookup %>%
   add_test_municipalities() %>% 
   #filter(is.na(municipality))
   mutate(test_municipality = paste0(agency_no_pd, " borough")) %>%
+  add_test_municipalities() %>% 
+  #filter(is.na(municipality))
+  mutate(test_municipality = paste0(agency_no_pd, " township")) %>%
   add_test_municipalities() %>% 
   #filter(is.na(municipality))
   mutate(test_municipality = str_replace(agency_no_pd, "City", "city")) %>%

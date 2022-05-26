@@ -29,20 +29,20 @@ The `agency` table looks like this:
 library(njoagleod)
 library(tidyverse)
 agency
-#> # A tibble: 527 × 5
-#>     year agency_county   agency_name                agency_type hiring_governed…
-#>    <dbl> <fct>           <chr>                      <fct>       <lgl>           
-#>  1  2021 Atlantic County Absecon City PD            Municipal   FALSE           
-#>  2  2021 Atlantic County Atlantic City PD           Municipal   TRUE            
-#>  3  2021 Atlantic County Atlantic Co Sheriffs Offi… County      TRUE            
-#>  4  2021 Atlantic County Atlantic County Prosecuto… County      FALSE           
-#>  5  2021 Atlantic County Brigantine PD              Municipal   FALSE           
-#>  6  2021 Atlantic County Egg Harbor City PD         Municipal   TRUE            
-#>  7  2021 Atlantic County Egg Harbor Twp PD          Municipal   FALSE           
-#>  8  2021 Atlantic County Galloway Twp PD            Municipal   FALSE           
-#>  9  2021 Atlantic County Hamilton Twp PD            Municipal   FALSE           
-#> 10  2021 Atlantic County Hammonton PD               Municipal   TRUE            
-#> # … with 517 more rows
+#> # A tibble: 529 × 6
+#>     year agency_county   agency_name   agency_type hiring_governed… municipality
+#>    <dbl> <chr>           <chr>         <fct>       <lgl>            <chr>       
+#>  1  2021 Atlantic County Absecon City… Municipal   FALSE            Absecon city
+#>  2  2021 Atlantic County Atlantic Cit… Municipal   TRUE             Atlantic Ci…
+#>  3  2021 Atlantic County Atlantic Co … County      TRUE             <NA>        
+#>  4  2021 Atlantic County Atlantic Cou… County      FALSE            <NA>        
+#>  5  2021 Atlantic County Brigantine PD Municipal   FALSE            Brigantine …
+#>  6  2021 Atlantic County Egg Harbor C… Municipal   TRUE             Egg Harbor …
+#>  7  2021 Atlantic County Egg Harbor T… Municipal   FALSE            Egg Harbor …
+#>  8  2021 Atlantic County Galloway Twp… Municipal   FALSE            Galloway to…
+#>  9  2021 Atlantic County Hamilton Twp… Municipal   FALSE            Hamilton to…
+#> 10  2021 Atlantic County Hammonton PD  Municipal   TRUE             Hammonton t…
+#> # … with 519 more rows
 ```
 
 The columns `year`, `agency_county` and `agency_name` form the primary
@@ -52,7 +52,7 @@ The `officer` table looks like this.
 
 ``` r
 officer
-#> # A tibble: 30,453 × 6
+#> # A tibble: 30,565 × 6
 #>     year agency_county   agency_name     officer_age officer_race officer_gender
 #>    <dbl> <fct>           <chr>                 <dbl> <fct>        <fct>         
 #>  1  2021 Atlantic County Absecon City PD          20 White        Male          
@@ -65,7 +65,7 @@ officer
 #>  8  2021 Atlantic County Absecon City PD          32 White        Male          
 #>  9  2021 Atlantic County Absecon City PD          34 White        Male          
 #> 10  2021 Atlantic County Absecon City PD          35 White        Male          
-#> # … with 30,443 more rows
+#> # … with 30,555 more rows
 ```
 
 The columns `year`, `agency_county` and `agency_name` act as a foreign
@@ -90,7 +90,7 @@ officer %>%
   mutate(incidents_per_officer = incident_count / officer_count) %>%
   select(-agency_county) %>%
   arrange(desc(incidents_per_officer))
-#> # A tibble: 467 × 5
+#> # A tibble: 468 × 5
 #>     year agency_name               officer_count incident_count incidents_per_o…
 #>    <dbl> <chr>                             <int>          <int>            <dbl>
 #>  1  2021 North Wildwood City PD               27             68             2.52
@@ -103,7 +103,7 @@ officer %>%
 #>  8  2021 Tuckerton Boro PD                    13             22             1.69
 #>  9  2021 Stratford Boro PD                    19             31             1.63
 #> 10  2021 Middle Twp PD                        54             88             1.63
-#> # … with 457 more rows
+#> # … with 458 more rows
 ```
 
 ## Notes
@@ -118,6 +118,15 @@ In this package, we have removed the duplicate entries and assigned the
 county to `NA`. As a result, the source data has `30617` officers across
 `530` agencies, while this package contains `30565` officers and `529`
 agencies.
+
+### Chester PD `agency_type` changed to `"Multiple Municipality"`
+
+In the source data, Chester PD is listed as a municipal agency, but it
+is a multiple municipality agency. In this package, the agency type has
+been changed to “Multiple Municipality”.
+
+Source: [Former site of the Chester Borough
+Police](https://chesterborough.org/departments/chester-borough-police/)
 
 ## Installation
 

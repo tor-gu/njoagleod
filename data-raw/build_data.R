@@ -1,11 +1,11 @@
-## ---- include = FALSE-------------------------------------------------
+## ---- include = FALSE--------------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
 
 
-## ----setup, include=FALSE---------------------------------------------
+## ----setup, include=FALSE----------------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(magrittr)
@@ -14,7 +14,7 @@ library(tidyr)
 library(njoaguof)
 
 
-## ---------------------------------------------------------------------
+## ----------------------------------------------------------------------------------
 agency_2021_csv <- "2021_NJOAGLEOD_Agency_Information.csv"
 officer_2021_csv <- "2021_NJOAGLEOD_Officer_Information.csv"
 
@@ -24,7 +24,7 @@ officer_2021 <- system.file("extdata", officer_2021_csv, package="njoagleod") %>
   readr::read_csv()
 
 
-## ---------------------------------------------------------------------
+## ----------------------------------------------------------------------------------
 agency <- agency_2021 %>%
   rename(agency_county=County,
          agency_name=Agency,
@@ -34,7 +34,7 @@ agency <- agency_2021 %>%
   relocate(year)
 
 
-## ---------------------------------------------------------------------
+## ----------------------------------------------------------------------------------
 fix_agency_county <- function(tbl) {
   county_levels <- levels(njoaguof::incident$agency_county)
   stopifnot(
@@ -51,7 +51,7 @@ fix_agency_county <- function(tbl) {
 agency <- agency %>% fix_agency_county()
 
 
-## ---------------------------------------------------------------------
+## ----------------------------------------------------------------------------------
 fix_agency_name <- function(tbl) {
   tbl %>%
     mutate(
@@ -77,7 +77,7 @@ fix_agency_name <- function(tbl) {
 agency <- agency %>% fix_agency_name()
 
 
-## ---------------------------------------------------------------------
+## ----------------------------------------------------------------------------------
 agency_type_levels <- c("State-wide", "County", "Municipal", 
                         "Multiple Municipalities", "Not Provided")
 agency <- agency %>%
@@ -86,7 +86,14 @@ agency <- agency %>%
 stopifnot(0 == agency %>% filter(is.na(agency_type)) %>% nrow())
 
 
-## ---------------------------------------------------------------------
+## ----------------------------------------------------------------------------------
+agency <- agency %>%
+  mutate(agency_type = if_else(
+    agency_name == "Chester PD", 
+    factor("Multiple Municipalities", agency_type_levels), agency_type))
+
+
+## ----------------------------------------------------------------------------------
 agency <- agency %>% 
   mutate(hiring_governed_by_civil_service = 
            str_to_lower(hiring_governed_by_civil_service)) %>%
@@ -97,7 +104,7 @@ agency <- agency %>%
   )) 
 
 
-## ---------------------------------------------------------------------
+## ----------------------------------------------------------------------------------
 stopifnot(
   setequal(
     agency %>% 
@@ -111,7 +118,7 @@ stopifnot(
 )
 
 
-## ---------------------------------------------------------------------
+## ----------------------------------------------------------------------------------
 municipality_lookup <- agency %>% 
   filter(agency_type == "Municipal") %>%
   filter(str_detect(agency_name, " PD$")) %>%
@@ -121,7 +128,7 @@ municipality_lookup <- agency %>%
 municipality_lookup
 
 
-## ---------------------------------------------------------------------
+## ----------------------------------------------------------------------------------
 add_test_municipalities <- function(municipality_lookup) {
   municipality_lookup %>% 
     filter(is.na(municipality)) %>%
@@ -136,13 +143,10 @@ add_test_municipalities <- function(municipality_lookup) {
 }
 
 
-## ---------------------------------------------------------------------
+## ----------------------------------------------------------------------------------
 municipality_lookup <- municipality_lookup %>% 
   #filter(is.na(municipality))
   mutate(test_municipality = paste0(agency_no_pd, " city")) %>%
-  add_test_municipalities() %>% 
-  #filter(is.na(municipality))
-  mutate(test_municipality = paste0(agency_no_pd, " township")) %>%
   add_test_municipalities() %>% 
   #filter(is.na(municipality))
   mutate(test_municipality = paste0(agency_no_pd, " town")) %>%
@@ -152,6 +156,9 @@ municipality_lookup <- municipality_lookup %>%
   add_test_municipalities() %>% 
   #filter(is.na(municipality))
   mutate(test_municipality = paste0(agency_no_pd, " borough")) %>%
+  add_test_municipalities() %>% 
+  #filter(is.na(municipality))
+  mutate(test_municipality = paste0(agency_no_pd, " township")) %>%
   add_test_municipalities() %>% 
   #filter(is.na(municipality))
   mutate(test_municipality = str_replace(agency_no_pd, "City", "city")) %>%
@@ -173,7 +180,7 @@ municipality_lookup <- municipality_lookup %>%
   add_test_municipalities()
 
 
-## ---------------------------------------------------------------------
+## ----------------------------------------------------------------------------------
 municipality_lookup <- municipality_lookup %>% 
   mutate(municipality = case_when(
     agency_name == "Mt. Ephraim PD" ~ "Mount Ephraim borough",
@@ -187,7 +194,7 @@ municipality_lookup <- municipality_lookup %>%
   ))
 
 
-## ---------------------------------------------------------------------
+## ----------------------------------------------------------------------------------
 municipality_lookup <- municipality_lookup %>% 
   filter(!(agency_name %in%
              c("Monmouth University PD",
@@ -205,12 +212,12 @@ stopifnot(0 ==
             nrow())
 
 
-## ---------------------------------------------------------------------
+## ----------------------------------------------------------------------------------
 agency <- agency %>% 
   left_join(municipality_lookup, by=c("agency_county", "agency_name"))
 
 
-## ---------------------------------------------------------------------
+## ----------------------------------------------------------------------------------
 officer <- officer_2021 %>%
   rename(agency_county=County,
          agency_name=Agency,
@@ -222,13 +229,13 @@ officer <- officer_2021 %>%
   relocate(year)
 
 
-## ---------------------------------------------------------------------
+## ----------------------------------------------------------------------------------
 officer <- officer %>% 
   fix_agency_county() %>% 
   fix_agency_name()
 
 
-## ---------------------------------------------------------------------
+## ----------------------------------------------------------------------------------
 # Save this value for the check at the end
 officer_race_not_provided <- officer %>% 
   filter(officer_race=="Not provided") %>%
@@ -255,7 +262,7 @@ stopifnot(
 )
 
 
-## ---------------------------------------------------------------------
+## ----------------------------------------------------------------------------------
 # Save this value for the check at the end
 officer_gender_not_provided <- officer %>% 
   filter(officer_gender=="Not Provided") %>%
@@ -278,7 +285,7 @@ stopifnot(
 )
 
 
-## ---------------------------------------------------------------------
+## ----------------------------------------------------------------------------------
 drbapd <- "Delaware River and Bay Authority Police Department"
 agency %>% filter(agency_name==drbapd)
 officer %>% filter(agency_name==drbapd) %>% 
@@ -286,7 +293,7 @@ officer %>% filter(agency_name==drbapd) %>%
   count()
 
 
-## ---------------------------------------------------------------------
+## ----------------------------------------------------------------------------------
 # In agency, filter out the non-Salem County DRBA agencies.
 agency <- agency %>% filter(agency_name != drbapd |
                     (agency_name == drbapd &
@@ -301,7 +308,7 @@ officer <- officer %>% filter(agency_name != drbapd |
 officer$agency_county[officer$agency_name == drbapd] <- NA
 
 
-## ---------------------------------------------------------------------
+## ----------------------------------------------------------------------------------
 stopifnot(
   0 ==
     agency %>%
@@ -312,7 +319,7 @@ stopifnot(
 )
 
 
-## ---------------------------------------------------------------------
+## ----------------------------------------------------------------------------------
 stopifnot(
   0 ==
     officer %>%
@@ -323,7 +330,7 @@ stopifnot(
 )
 
 
-## ---------------------------------------------------------------------
+## ----------------------------------------------------------------------------------
 stopifnot(
   0 ==
     agency %>%
@@ -333,7 +340,7 @@ stopifnot(
 )
 
 
-## ---------------------------------------------------------------------
+## ----------------------------------------------------------------------------------
 stopifnot(
   njoaguof::incident %>%
     select(agency_county, agency_name) %>%
