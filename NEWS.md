@@ -1,3 +1,10 @@
+# njoagleod 1.1.3
+* Corrected error in the source data:
+  - Chester PD `agency_type` corrected: `Municipal` --> `Multiple Municipality`.
+* Corected two errors I introduced:
+  - Boonton PD `municipality`:  "Boonton township" --> "Boonton town"
+  - Shrewsbury PD `municipality`:  "Shrewsbury township" --> "Shrewsbury borough"
+  
 # njoagleod 1.1.2
 * Changed three agency names for consistency
 
