@@ -420,6 +420,7 @@ stopifnot(
       "Linden Police Department",
       "Freehold Boro PD",
       "Washington Twp PD",
+      "Boonton Twp PD",
       "College Of New Jersey",
       "State Parole Board"
     ) %>%
