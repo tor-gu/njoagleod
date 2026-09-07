@@ -1,6 +1,11 @@
+^\.Rprofile$
+^renv$
+^renv\.lock$
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
 ^data-raw$
 ^README\.Rmd$
 ^\.github$
+^_dependencies\.R$
+^\.renvignore$

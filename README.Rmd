@@ -34,7 +34,7 @@ Currently 2021 is the only year represented.
 The ```agency``` table looks like this:
 ```{r}
 library(njoagleod)
-library(tidyverse)
+library(dplyr)
 agency
 ```
 The columns ```year```, ```agency_county``` and ```agency_name``` form the primary key.  
