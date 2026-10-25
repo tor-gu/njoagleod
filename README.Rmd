@@ -19,69 +19,171 @@ knitr::opts_chunk$set(
 [![R-CMD-check](https://github.com/tor-gu/njoagleod/workflows/R-CMD-check/badge.svg)](https://github.com/tor-gu/njoagleod/actions)
 <!-- badges: end -->
 
-This is a cleaned-up version of the NJ OAG Law Enforcement Officer Diversity 
+This is a cleaned-up version of the NJ OAG Law Enforcement Officer Diversity
   database available from https://www.njoag.gov/policerecruiting/
 
 ## Dataset Overview
-This dataset contains two tables.
+This package is built from the 2025 NJ OAG release, which covers officers for
+2021--2025 and agencies and applicants for 2022--2025. It contains six tables.
 
-* ```agency``` Has one row for each law enforcement agency, for each year
-* ```officer``` Has one row for each officer, for each year.
-
-Currently 2021 is the only year represented.
+* ```agency``` One row per law enforcement agency (per name, if the agency is renamed).
+  Each agency has a stable ```agency_id```.
+* ```agency_alias``` Every spelling of every agency's name, in the NJ OAG releases and in
+  the [```njoaguof```](https://github.com/tor-gu/njoaguof) package, mapped to its
+  ```agency_id```.
+* ```agency_municipality``` The municipalities each agency serves, identified as in the
+  [```njmunicipalities```](https://github.com/tor-gu/njmunicipalities) package.
+* ```agency_practice``` Each agency's hiring and promotion practices, by year.
+* ```officer``` Counts of officers by year, agency, race, age range, gender and promotion.
+* ```applicant``` Counts of applicants by year, agency, race, age range, gender, applicant
+  type and outcome.
 
 ## Examples
-The ```agency``` table looks like this:
-```{r}
+```{r, message = FALSE}
 library(njoagleod)
 library(dplyr)
+```
+
+The ```agency``` table looks like this:
+```{r}
 agency
 ```
-The columns ```year```, ```agency_county``` and ```agency_name``` form the primary key.  
+The columns ```agency_id``` and ```first_year``` form the primary key. The other tables
+refer to agencies by ```agency_id``` only.
 
-The ```officer``` table looks like this.
+The ```officer``` and ```applicant``` tables are count tables: each row is a combination of
+characteristics, and ```officer_count``` (or ```applicant_count```) is the number of people
+who share it.
 ```{r}
 officer
 ```
-The columns ```year```, ```agency_county``` and ```agency_name``` act as a foreign
-key to the ```agency``` table.
-
-The ```agency_name``` and ```agency_county``` columns are consistent with the columns
-of the same name in the associated [```njoaguof```](https://github.com/tor-gu/njoaguof) package so that they may be easily used together.  
-
-For example, here are the agencies with the highest number of use-of-force incidents per officer.
+So count people with the count as a weight. Counting rows counts combinations, not officers.
 ```{r}
-officer %>% 
-  group_by(year, agency_county, agency_name) %>%
-  summarize(officer_count = n(), .groups = "drop") %>%
-  left_join(njoaguof::incident, by=c("agency_county", "agency_name")) %>%
-  filter(lubridate::year(incident_date_1)==year) %>%
-  group_by(year, agency_county, agency_name, officer_count) %>%
-  summarize(incident_count = n(), .groups="drop") %>%
-  mutate(incidents_per_officer = incident_count / officer_count) %>%
-  select(-agency_county) %>%
+officer %>%
+  filter(year == 2025) %>%
+  count(officer_race, wt = officer_count, name = "officers")
+```
+
+To attach agency names to a table, join ```agency``` on the ```agency_id``` and the
+years each name was in use:
+```{r}
+officer %>%
+  count(year, agency_id, wt = officer_count, name = "officers") %>%
+  left_join(agency, join_by(agency_id, between(year, first_year, final_year))) %>%
+  select(year, agency_county, agency_name, officers) %>%
+  arrange(desc(officers))
+```
+
+### Municipalities
+```agency_municipality``` identifies municipalities by ```GEOID_Y2K```, the stable municipality
+identifier of the ```njmunicipalities``` package. It does not change when a municipality
+is renamed or assigned a new GEOID. To get the name and GEOID in effect in a given year:
+```{r}
+agency_municipality %>%
+  left_join(
+    njmunicipalities::get_municipalities(2025, geoid_year = 2000,
+                                         geoid_ref_as_ref_column = TRUE),
+    by = c("GEOID_Y2K" = "GEOID_ref")
+  ) %>%
+  left_join(agency %>% filter(first_year <= 2025, final_year >= 2025), by = "agency_id") %>%
+  select(agency_name, GEOID, county, municipality)
+```
+Agencies that serve more than one municipality have one row for each:
+```{r}
+agency %>%
+  filter(agency_type == "Multiple Municipalities") %>%
+  inner_join(agency_municipality, by = "agency_id") %>%
+  left_join(
+    njmunicipalities::get_municipalities(2025, geoid_year = 2000,
+                                         geoid_ref_as_ref_column = TRUE),
+    by = c("GEOID_Y2K" = "GEOID_ref")
+  ) %>%
+  select(agency_name, municipality)
+```
+
+### Use with ```njoaguof```
+```agency_alias``` maps the agency names used by ```njoaguof``` to ```agency_id```. For
+example, here are the agencies with the most use-of-force incidents per officer in 2024.
+(See the note below on incomplete agency reports.)
+```{r}
+uof_agency <- agency_alias %>%
+  filter(source == "njoaguof") %>%
+  select(agency_county, agency_name, agency_id)
+
+njoaguof::incident %>%
+  filter(format(incident_date_1, "%Y") == "2024") %>%
+  mutate(agency_county = as.character(agency_county)) %>%
+  inner_join(uof_agency, by = c("agency_county", "agency_name")) %>%
+  count(agency_id, name = "incidents") %>%
+  inner_join(
+    officer %>%
+      filter(year == 2024) %>%
+      count(agency_id, wt = officer_count, name = "officers"),
+    by = "agency_id"
+  ) %>%
+  mutate(incidents_per_officer = incidents / officers) %>%
+  left_join(agency %>% filter(first_year <= 2024, final_year >= 2024), by = "agency_id") %>%
+  select(agency_name, incidents, officers, incidents_per_officer) %>%
   arrange(desc(incidents_per_officer))
 ```
 
 ## Notes
+These are the ways in which this package differs from the source data.
 
-### Duplicates entries removed
-In the source data, The Delaware River and Bay Authority Police Department and its officers appear twice, once associated to Salem County and once associated to Cape May County. 
+### Agency identifiers and names
+The source identifies agencies by county and name only. This package assigns each agency a
+stable ```agency_id```, and records every spelling seen in ```agency_alias```. The
+```agency_name``` in ```agency``` is the 2025 release's spelling, except for these
+agencies, where it fixes a truncation or follows the "Twp PD" naming of the other agencies:
+```{r}
+agency_alias %>%
+  filter(source == "njoag-leod-2025") %>%
+  inner_join(agency, by = "agency_id", suffix = c("_source", "")) %>%
+  filter(agency_name_source != agency_name) %>%
+  select(source_name = agency_name_source, agency_name)
+```
 
-In this package, we have removed the duplicate entries and assigned the county to `NA`.  As a result, the source data has ```30617``` officers across ```530``` agencies, while this package contains ```30565``` officers and ```529``` agencies.
+Agencies that the source lists as "State or Other Agency" have ```agency_county``` `NA`.
 
-### Chester PD `agency_type` changed to `"Multiple Municipality"`
-In the source data, Chester PD is listed as a municipal agency, but it is a 
-multiple municipality agency. In this package, the agency type has been changed to "Multiple Municipality".
+### Agency type and municipalities
+The source no longer reports agency type. ```agency_type``` was assigned by this package,
+starting from the 2021 release's agency types, with some corrections: for example, Chester PD
+serves both Chester borough and Chester township, and the police departments of private
+universities have type "Other". The municipalities in ```agency_municipality``` were also
+assigned by this package, including municipalities served under shared-services agreements.
+The sources for these are recorded in ```inst/extdata/agency_municipality.csv```.
 
-Source: [Former site of the Chester Borough Police](https://chesterborough.org/departments/chester-borough-police/)
+### Incomplete agency reports
+The data is as reported by each agency, and some agency-years look incomplete. For example,
+Lakewood PD reports 153 officers in 2021 but 20 in 2022 and 58 in 2025, and Saddle Brook PD
+reports about 30 officers every year until 2025, when it reports 5. This package does not
+correct these. Here are the agency-years with fewer than half the agency's median number of
+officers (among agencies with a median of at least 10). This is only a rough screen: it misses
+agencies that report too few officers in most years, such as Fair Lawn PD, which reports 7 to
+17 officers in 2021--2024 and 56 in 2025.
+```{r}
+officer %>%
+  count(agency_id, year, wt = officer_count, name = "officers") %>%
+  group_by(agency_id) %>%
+  mutate(median_officers = median(officers)) %>%
+  ungroup() %>%
+  filter(median_officers >= 10, officers < median_officers / 2) %>%
+  left_join(agency, join_by(agency_id, between(year, first_year, final_year))) %>%
+  select(year, agency_county, agency_name, officers, median_officers) %>%
+  arrange(year, agency_county, agency_name) %>%
+  print(n = Inf)
+```
+
+### Recoded values
+"Not Provided" and "Blank" are recoded as `NA`, and yes/no answers as logicals. One value in
+the source has a trailing space (`"Other "` as the reason for no appointment), which has been
+removed.
 
 ## Installation
 
-You can install the latest version of njoaguof from [GitHub](https://github.com/) with:
+You can install the latest version of njoagleod from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
 devtools::install_github("tor-gu/njoagleod")
 ```
-

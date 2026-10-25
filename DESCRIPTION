@@ -15,7 +15,6 @@ Suggests:
     devtools,
     dplyr (>= 1.1.0),
     knitr,
-    lubridate,
     magrittr,
     njmunicipalities,
     njoaguof,
