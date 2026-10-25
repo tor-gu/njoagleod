@@ -338,13 +338,15 @@ Agencies that the source lists as “State or Other Agency” have
 
 ### Agency type and municipalities
 
-The source no longer reports agency type. `agency_type` was assigned by
-this package, starting from the 2021 release’s agency types, with some
-corrections: for example, Chester PD serves both Chester borough and
-Chester township, and the police departments of private universities
-have type “Other”. The municipalities in `agency_municipality` were also
-assigned by this package, including municipalities served under
-shared-services agreements. The sources for these are recorded in
+`agency_type` and `agency_municipality` are not in the source data; they
+are assigned by this package. A “Municipal” agency serves one
+municipality, and a “Multiple Municipalities” agency also serves
+municipalities that contract with it for police services;
+`agency_municipality` lists the municipalities each serves. “County” and
+“State-wide” agencies are county and state agencies, including county
+colleges and state universities, and “Other” covers interstate
+authorities and the campus police of private institutions. The sources
+for the shared-services municipalities are recorded in
 `inst/extdata/agency_municipality.csv`.
 
 ### Incomplete agency reports
