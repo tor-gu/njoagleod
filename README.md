@@ -204,45 +204,104 @@ agency %>%
 
 ### Use with `njoaguof`
 
-`agency_alias` maps the agency names used by `njoaguof` to `agency_id`.
-For example, here are the agencies with the most use-of-force incidents
-per officer in 2024. (See the note below on incomplete agency reports.)
+`agency_alias` maps the agency names used by `njoaguof` to `agency_id`,
+so use-of-force incidents can be set against what this package knows
+about each agency: its officers and its hiring practices. Here we count
+2024 incidents per agency.
 
 ``` r
 uof_agency <- agency_alias %>%
   filter(source == "njoaguof") %>%
   select(agency_county, agency_name, agency_id)
 
-njoaguof::incident %>%
+incidents_2024 <- njoaguof::incident %>%
   filter(format(incident_date_1, "%Y") == "2024") %>%
   mutate(agency_county = as.character(agency_county)) %>%
   inner_join(uof_agency, by = c("agency_county", "agency_name")) %>%
-  count(agency_id, name = "incidents") %>%
-  inner_join(
-    officer %>%
-      filter(year == 2024) %>%
-      count(agency_id, wt = officer_count, name = "officers"),
-    by = "agency_id"
-  ) %>%
-  mutate(incidents_per_officer = incidents / officers) %>%
-  left_join(agency %>% filter(first_year <= 2024, final_year >= 2024), by = "agency_id") %>%
-  select(agency_name, incidents, officers, incidents_per_officer) %>%
-  arrange(desc(incidents_per_officer))
-#> # A tibble: 493 × 4
-#>    agency_name                      incidents officers incidents_per_officer
-#>    <chr>                                <int>    <int>                 <dbl>
-#>  1 Seaside Heights PD                     212       28                  7.57
-#>  2 Vineland PD                            413      146                  2.83
-#>  3 Pleasantville PD                       141       52                  2.71
-#>  4 Point Pleasant Beach PD                 58       25                  2.32
-#>  5 Waterford Twp PD                        55       25                  2.2 
-#>  6 Delaware River Port Authority PD       210       96                  2.19
-#>  7 New Jersey Transit Police              661      308                  2.15
-#>  8 Red Bank PD                             75       36                  2.08
-#>  9 Wildwood PD                             95       47                  2.02
-#> 10 Fair Lawn PD                            14        7                  2   
-#> # ℹ 483 more rows
+  count(agency_id, name = "incidents")
 ```
+
+From the `officer` table, the size of each agency’s force and its share
+of female officers and of officers aged 35 or under; from
+`agency_practice`, whether hiring is governed by Civil Service.
+
+``` r
+officers_2024 <- officer %>%
+  filter(year == 2024) %>%
+  group_by(agency_id) %>%
+  summarize(
+    officers = sum(officer_count),
+    pct_female = 100 * sum(officer_count[officer_gender %in% "Female"]) / officers,
+    pct_35_or_under =
+      100 * sum(officer_count[officer_age_range %in% c("25 or less", "26-35")]) / officers
+  )
+
+agency_2024 <- officers_2024 %>%
+  left_join(incidents_2024, by = "agency_id") %>%
+  mutate(incidents = coalesce(incidents, 0L),
+         incidents_per_100_officers = 100 * incidents / officers) %>%
+  left_join(agency_practice %>% filter(year == 2024) %>%
+              select(agency_id, hiring_civil_service),
+            by = "agency_id") %>%
+  left_join(agency %>% filter(first_year <= 2024, final_year >= 2024) %>%
+              select(agency_id, agency_name, agency_type),
+            by = "agency_id")
+```
+
+The ten agencies with at least 50 officers and the most incidents per
+officer:
+
+``` r
+agency_2024 %>%
+  filter(officers >= 50) %>%
+  arrange(desc(incidents_per_100_officers)) %>%
+  select(agency_name, officers, pct_female, pct_35_or_under, hiring_civil_service,
+         incidents_per_100_officers) %>%
+  head(10) %>%
+  knitr::kable(digits = 0)
+```
+
+| agency_name                      | officers | pct_female | pct_35_or_under | hiring_civil_service | incidents_per_100_officers |
+|:---------------------------------|---------:|-----------:|----------------:|:---------------------|---------------------------:|
+| Vineland PD                      |      146 |         12 |              52 | TRUE                 |                        283 |
+| Pleasantville PD                 |       52 |         15 |              58 | TRUE                 |                        271 |
+| Delaware River Port Authority PD |       96 |          7 |              47 | FALSE                |                        219 |
+| New Jersey Transit Police        |      308 |          8 |              45 | FALSE                |                        215 |
+| Neptune Twp PD                   |       86 |          8 |              41 | FALSE                |                        193 |
+| Pennsauken Twp PD                |       88 |         16 |              55 | TRUE                 |                        189 |
+| Hoboken PD                       |      140 |         11 |              53 | TRUE                 |                        181 |
+| Glassboro PD                     |       52 |         12 |              50 | FALSE                |                        181 |
+| Trenton PD                       |      236 |         18 |              43 | TRUE                 |                        177 |
+| Asbury Park PD                   |       87 |          8 |              33 | TRUE                 |                        176 |
+
+And, for municipal agencies, incidents per 100 officers by Civil Service
+hiring and by the share of officers aged 35 or under:
+
+``` r
+agency_2024 %>%
+  filter(agency_type == "Municipal") %>%
+  mutate(pct_35_or_under = cut(pct_35_or_under, c(0, 30, 45, 60, 100),
+                               include.lowest = TRUE)) %>%
+  group_by(hiring_civil_service, pct_35_or_under) %>%
+  summarize(agencies = n(),
+            incidents_per_100_officers = 100 * sum(incidents) / sum(officers),
+            .groups = "drop")
+#> # A tibble: 8 × 4
+#>   hiring_civil_service pct_35_or_under agencies incidents_per_100_officers
+#>   <lgl>                <fct>              <int>                      <dbl>
+#> 1 FALSE                [0,30]                23                       48.2
+#> 2 FALSE                (30,45]               89                       58.1
+#> 3 FALSE                (45,60]              125                       51.3
+#> 4 FALSE                (60,100]              40                       55.8
+#> 5 TRUE                 [0,30]                15                       50.3
+#> 6 TRUE                 (30,45]               68                       79.3
+#> 7 TRUE                 (45,60]               66                       96.7
+#> 8 TRUE                 (60,100]              22                      110.
+```
+
+These are descriptive only: incident rates depend heavily on what each
+agency polices, and some agencies’ officer counts are incomplete (see
+the note below).
 
 ## Notes
 

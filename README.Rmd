@@ -102,30 +102,69 @@ agency %>%
 ```
 
 ### Use with ```njoaguof```
-```agency_alias``` maps the agency names used by ```njoaguof``` to ```agency_id```. For
-example, here are the agencies with the most use-of-force incidents per officer in 2024.
-(See the note below on incomplete agency reports.)
+```agency_alias``` maps the agency names used by ```njoaguof``` to ```agency_id```, so
+use-of-force incidents can be set against what this package knows about each agency: its
+officers and its hiring practices. Here we count 2024 incidents per agency.
 ```{r}
 uof_agency <- agency_alias %>%
   filter(source == "njoaguof") %>%
   select(agency_county, agency_name, agency_id)
 
-njoaguof::incident %>%
+incidents_2024 <- njoaguof::incident %>%
   filter(format(incident_date_1, "%Y") == "2024") %>%
   mutate(agency_county = as.character(agency_county)) %>%
   inner_join(uof_agency, by = c("agency_county", "agency_name")) %>%
-  count(agency_id, name = "incidents") %>%
-  inner_join(
-    officer %>%
-      filter(year == 2024) %>%
-      count(agency_id, wt = officer_count, name = "officers"),
-    by = "agency_id"
-  ) %>%
-  mutate(incidents_per_officer = incidents / officers) %>%
-  left_join(agency %>% filter(first_year <= 2024, final_year >= 2024), by = "agency_id") %>%
-  select(agency_name, incidents, officers, incidents_per_officer) %>%
-  arrange(desc(incidents_per_officer))
+  count(agency_id, name = "incidents")
 ```
+From the ```officer``` table, the size of each agency's force and its share of female
+officers and of officers aged 35 or under; from ```agency_practice```, whether hiring is
+governed by Civil Service.
+```{r}
+officers_2024 <- officer %>%
+  filter(year == 2024) %>%
+  group_by(agency_id) %>%
+  summarize(
+    officers = sum(officer_count),
+    pct_female = 100 * sum(officer_count[officer_gender %in% "Female"]) / officers,
+    pct_35_or_under =
+      100 * sum(officer_count[officer_age_range %in% c("25 or less", "26-35")]) / officers
+  )
+
+agency_2024 <- officers_2024 %>%
+  left_join(incidents_2024, by = "agency_id") %>%
+  mutate(incidents = coalesce(incidents, 0L),
+         incidents_per_100_officers = 100 * incidents / officers) %>%
+  left_join(agency_practice %>% filter(year == 2024) %>%
+              select(agency_id, hiring_civil_service),
+            by = "agency_id") %>%
+  left_join(agency %>% filter(first_year <= 2024, final_year >= 2024) %>%
+              select(agency_id, agency_name, agency_type),
+            by = "agency_id")
+```
+The ten agencies with at least 50 officers and the most incidents per officer:
+```{r}
+agency_2024 %>%
+  filter(officers >= 50) %>%
+  arrange(desc(incidents_per_100_officers)) %>%
+  select(agency_name, officers, pct_female, pct_35_or_under, hiring_civil_service,
+         incidents_per_100_officers) %>%
+  head(10) %>%
+  knitr::kable(digits = 0)
+```
+And, for municipal agencies, incidents per 100 officers by Civil Service hiring and by the
+share of officers aged 35 or under:
+```{r}
+agency_2024 %>%
+  filter(agency_type == "Municipal") %>%
+  mutate(pct_35_or_under = cut(pct_35_or_under, c(0, 30, 45, 60, 100),
+                               include.lowest = TRUE)) %>%
+  group_by(hiring_civil_service, pct_35_or_under) %>%
+  summarize(agencies = n(),
+            incidents_per_100_officers = 100 * sum(incidents) / sum(officers),
+            .groups = "drop")
+```
+These are descriptive only: incident rates depend heavily on what each agency polices, and
+some agencies' officer counts are incomplete (see the note below).
 
 ## Notes
 These are the ways in which this package differs from the source data.
