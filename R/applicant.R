@@ -1,0 +1,23 @@
+#' Applicants in the NJ OAG Law Enforcement Officer Diversity data set
+#'
+#' Counts of applicants for law enforcement officer positions, 2022 onward. Each row is a
+#' combination of year, agency and applicant characteristics, and `applicant_count` is the
+#' number of applicants who share it. Count applicants with `applicant_count` as a weight,
+#' e.g. `dplyr::count(applicant, year, outcome, wt = applicant_count)`.
+#'
+#' Every column except `applicant_count` is part of the primary key.
+#' @format A dataframe with 9 columns
+#' \describe{
+#'  \item{year}{Year}
+#'  \item{agency_id}{Stable agency identifier, as in [agency]}
+#'  \item{applicant_race}{Applicant race or ethnicity. As in the US Census, Hispanic
+#'  applicants are "Hispanic" regardless of race.}
+#'  \item{applicant_age_range}{Applicant age range (ordered factor)}
+#'  \item{applicant_gender}{Applicant gender}
+#'  \item{applicant_type}{Applicant type, such as "Direct Hire" or "Transfer"}
+#'  \item{outcome}{"Appointed to Agency", "Not Appointed" or "Pending"}
+#'  \item{no_appointment_reason}{Reason the applicant was not appointed}
+#'  \item{applicant_count}{Number of applicants}
+#' }
+#' @source \url{https://www.njoag.gov/policerecruiting/}
+"applicant"

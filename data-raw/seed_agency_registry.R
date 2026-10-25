@@ -13,13 +13,12 @@
 
 library(dplyr)
 library(stringr)
-library(tidyr)
 
 extdata <- "inst/extdata"
 release_files <- c(
-  "2025 Law Enforcement Diversity Data - Agency Information.xlsx",
-  "2025 Law Enforcement Diversity Data - Officer Table.xlsx",
-  "2025 Law Enforcement Diversity Data - Applicant Table.xlsx"
+  "2025_Law_Enforcement_Diversity_Data_Agency_Information.xlsx",
+  "2025_Law_Enforcement_Diversity_Data_Officer_Table.xlsx",
+  "2025_Law_Enforcement_Diversity_Data_Applicant_Table.xlsx"
 )
 
 county_levels <- njmunicipalities::counties$county

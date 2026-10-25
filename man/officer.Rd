@@ -5,14 +5,20 @@
 \alias{officer}
 \title{Officers in the NJ OAG Law Enforcement Officer Diversity data set}
 \format{
-A dataframe with 6 columns
+A dataframe with 11 columns
 \describe{
  \item{year}{Year}
- \item{agency_county}{Agency county, or `NA` if statewide or regional}
- \item{agency_name}{Agency name, such as "Abescon City PD"}
- \item{officer_age}{Officer age}
- \item{officer_race}{Officer race}
+ \item{agency_id}{Stable agency identifier, as in [agency]}
+ \item{officer_race}{Officer race or ethnicity. As in the US Census, Hispanic officers
+ are "Hispanic" regardless of race.}
+ \item{officer_age_range}{Officer age range (ordered factor)}
  \item{officer_gender}{Officer gender}
+ \item{eligible_for_promotion}{Was the officer eligible for promotion?}
+ \item{applied_for_promotion}{Did the officer apply for promotion?}
+ \item{promoted}{Was the officer promoted?}
+ \item{old_rank}{Rank before promotion, standardized by the source}
+ \item{new_rank}{Rank after promotion, standardized by the source}
+ \item{officer_count}{Number of officers}
 }
 }
 \source{
@@ -22,10 +28,13 @@ A dataframe with 6 columns
 officer
 }
 \description{
-Officer records from the NJ OAG Law Enforcement Officer Diversity data set.
+Officer counts from the NJ OAG Law Enforcement Officer Diversity data set. Each row is
+a combination of year, agency and officer characteristics, and `officer_count` is the
+number of officers who share it. Count officers with `officer_count` as a weight, e.g.
+`dplyr::count(officer, year, officer_race, wt = officer_count)`; counting rows counts
+combinations, not officers.
 }
 \details{
-The first three columns -- `year`, `agency_county` and `agency_name` -- serve
-as foreign key to the `agency` table.
+Every column except `officer_count` is part of the primary key.
 }
 \keyword{datasets}

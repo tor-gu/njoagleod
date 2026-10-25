@@ -1,0 +1,22 @@
+#' Agency name spellings by source
+#'
+#' Every spelling of every agency's county and name seen in a source, mapped to its
+#' `agency_id`. Use it to join other data sets that identify agencies by name, such as
+#' the `njoaguof` use-of-force package.
+#'
+#' The sources are
+#' \describe{
+#'  \item{"njoag-leod-2025"}{The 2025 NJ OAG release, from which this package is built}
+#'  \item{"njoag-leod-2021"}{The 2021 NJ OAG release, used by version 1 of this package}
+#'  \item{"njoaguof"}{The `njoaguof` package}
+#' }
+#'
+#' The columns `source`, `agency_county` and `agency_name` serve as the primary key.
+#' @format A dataframe with 4 columns
+#' \describe{
+#'  \item{source}{Source of the spelling}
+#'  \item{agency_county}{Agency county, as spelled by the source}
+#'  \item{agency_name}{Agency name, as spelled by the source}
+#'  \item{agency_id}{Stable agency identifier, as in [agency]}
+#' }
+"agency_alias"

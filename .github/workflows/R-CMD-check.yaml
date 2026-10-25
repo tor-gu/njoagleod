@@ -33,7 +33,7 @@ jobs:
       RENV_CONFIG_AUTOLOADER_ENABLED: false
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: r-lib/actions/setup-pandoc@v2
 
@@ -43,11 +43,11 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
-      - name: Install njoaguof and other dependencies.
+      - name: Install njoaguof, njmunicipalities and other dependencies.
         run: |
           install.packages(c('remotes', 'rcmdcheck'))
           remotes::install_deps(dependencies = TRUE)
-          remotes::install_github('https://github.com/tor-gu/njoaguof')
+          remotes::install_github(c("tor-gu/njoaguof", "tor-gu/njmunicipalities"))
         shell: Rscript {0}
 
       - uses: r-lib/actions/check-r-package@v2

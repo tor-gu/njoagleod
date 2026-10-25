@@ -1,5 +1,0 @@
-# Out-of-band: municipality.R rebuilds the `municipality` table from the US
-# Census and needs an API key. Keeping it out of dependency discovery keeps
-# tidycensus (and sf, s2, units, classInt) out of renv.lock. Install it ad hoc
-# with renv::install("tidycensus") when the table actually needs refreshing.
-data-raw/municipality.R

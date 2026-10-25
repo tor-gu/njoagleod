@@ -1,362 +1,285 @@
-## ---- include = FALSE--------------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
 
 
-## ----setup, include=FALSE----------------------------------------------------------
+## ----setup, include=FALSE-----------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(magrittr)
 library(stringr)
-library(tidyr)
-library(njoaguof)
 
 
-## ----------------------------------------------------------------------------------
-agency_2021_csv <- "2021_NJOAGLEOD_Agency_Information.csv"
-officer_2021_csv <- "2021_NJOAGLEOD_Officer_Information.csv"
-
-agency_2021 <- system.file("extdata", agency_2021_csv, package="njoagleod") %>%
-  readr::read_csv()
-officer_2021 <- system.file("extdata", officer_2021_csv, package="njoagleod") %>%
-  readr::read_csv()
-
-
-## ----------------------------------------------------------------------------------
-agency <- agency_2021 %>%
-  rename(agency_county=County,
-         agency_name=Agency,
-         agency_type=`Agency Type`,
-         hiring_governed_by_civil_service=`Hiring governed by Civil Service?`) %>%
-  mutate(year=2021) %>% 
-  relocate(year)
+## -----------------------------------------------------------------------------
+read_release <- function(file) {
+  system.file("extdata", file, package = "njoagleod") %>%
+    readxl::read_excel() %>%
+    mutate(Year = as.integer(Year))
+}
+agency_raw <- read_release(
+  "2025_Law_Enforcement_Diversity_Data_Agency_Information.xlsx")
+officer_raw <- read_release(
+  "2025_Law_Enforcement_Diversity_Data_Officer_Table.xlsx")
+applicant_raw <- read_release(
+  "2025_Law_Enforcement_Diversity_Data_Applicant_Table.xlsx")
 
 
-## ----------------------------------------------------------------------------------
-fix_agency_county <- function(tbl) {
-  county_levels <- levels(njoaguof::incident$agency_county)
-  stopifnot(
-    "Statewide Or Regional Lea County" ==
-      tbl %>% pull(agency_county) %>% str_to_title() %>%
-      paste0(" County") %>% setdiff(county_levels)
+## -----------------------------------------------------------------------------
+to_factor <- function(x, levels, na_values = "Not Provided") {
+  stopifnot(all(x %in% c(levels, na_values)))
+  factor(if_else(x %in% na_values, NA_character_, x), levels = levels)
+}
+
+to_logical <- function(x, true, false, na_values = c(NA, "Not Provided", "Blank")) {
+  stopifnot(all(x %in% c(true, false, na_values)))
+  case_when(x == true ~ TRUE, x == false ~ FALSE, .default = NA)
+}
+
+
+## -----------------------------------------------------------------------------
+read_registry <- function(file, col_types) {
+  system.file("extdata", file, package = "njoagleod") %>%
+    readr::read_csv(col_types = col_types, na = "")
+}
+county_levels <- njmunicipalities::counties$county
+agency_type_levels <- c("State-wide", "County", "Municipal",
+                        "Multiple Municipalities", "Other")
+
+agency <- read_registry("agency_registry.csv", "ciicccc") %>%
+  mutate(agency_county = to_factor(agency_county, county_levels, NA),
+         agency_type = to_factor(agency_type, agency_type_levels, character()))
+agency_alias <- read_registry("agency_alias.csv", "cccc")
+agency_municipality <- read_registry("agency_municipality.csv", "cciicc") %>%
+  select(agency_id, GEOID_Y2K, first_year, final_year)
+
+
+## -----------------------------------------------------------------------------
+stopifnot(
+  !anyDuplicated(agency %>% select(agency_id, first_year)),
+  !anyDuplicated(agency_alias %>% select(source, agency_county, agency_name)),
+  !anyDuplicated(agency_municipality %>% select(agency_id, GEOID_Y2K, first_year)),
+  all(agency$first_year <= agency$final_year),
+  all(agency_municipality$first_year <= agency_municipality$final_year)
+)
+stopifnot(
+  0 == agency %>%
+    inner_join(agency, by = join_by(agency_id, first_year < first_year,
+                                    final_year >= first_year)) %>%
+    nrow()
+)
+
+
+## -----------------------------------------------------------------------------
+stopifnot(all(agency_alias$agency_id %in% agency$agency_id))
+agency_span <- agency %>%
+  group_by(agency_id) %>%
+  summarize(agency_first = min(first_year), agency_final = max(final_year))
+stopifnot(
+  agency_municipality %>%
+    left_join(agency_span, by = "agency_id") %>%
+    with(all(first_year >= agency_first & final_year <= agency_final))
+)
+
+
+## -----------------------------------------------------------------------------
+stopifnot(
+  all(agency_municipality$GEOID_Y2K %in%
+        njmunicipalities::get_municipalities(2000)$GEOID)
+)
+municipality_counts <- agency %>%
+  distinct(agency_id, agency_type) %>%
+  left_join(agency_municipality %>% count(agency_id), by = "agency_id") %>%
+  mutate(n = coalesce(n, 0L))
+stopifnot(
+  municipality_counts %>%
+    with(all(n[agency_type == "Municipal"] == 1) &&
+           all(n[agency_type == "Multiple Municipalities"] >= 2))
+)
+
+
+## -----------------------------------------------------------------------------
+add_agency_id <- function(tbl, source_name = "njoag-leod-2025") {
+  aliases <- agency_alias %>%
+    filter(source == source_name) %>%
+    select(County = agency_county, Agency = agency_name, agency_id)
+  result <- tbl %>% left_join(aliases, by = c("County", "Agency"))
+  stopifnot(nrow(result) == nrow(tbl), !anyNA(result$agency_id))
+  result %>% select(-County, -Agency) %>% relocate(Year, agency_id)
+}
+
+
+## -----------------------------------------------------------------------------
+practice_columns <- c(
+  applications_received =
+    "Did your agency receive any applications for employment during the above time period?",
+  hiring_civil_service = "Agency Hiring Process Governed by Civil Service",
+  hire_method_civil_service_list = "Hire Method - Civil Service Exam List",
+  hire_method_non_civil_service_list = "Hire Method - Non-civil service exam list",
+  hire_method_intergovernmental_transfer = "Hire Method - Inter-Governmental Transfer",
+  hire_method_waiver = "Hire Method - Waiver Hire",
+  hire_method_bcpo_direct = "Hire Method - Direc hire of a BCPO Officer",
+  hire_element_return_the_card = "Hire Elements - Return the Card",
+  hire_element_formal_application = "Hire Elements - Formal Application",
+  hire_element_interview_board = "Hire Elements - Interview Board",
+  hire_element_written_exam = "Hire Elements - Written exam",
+  hire_element_local_preference =
+    "Hire Elements - Preference for local or county applicants",
+  hire_element_veteran_preference = "Hire Elements - Preference for veteran applicants",
+  hire_element_drug_test = "Hire Elements - Drug testing",
+  hire_element_medical_exam = "Hire Elements - Medical Exam",
+  hire_element_psychiatric_exam = "Hire Elements - Psychiatric Exam",
+  appointed_before_academy = "Officer is appointed prior to entry in the academy?",
+  appointed_after_academy =
+    "Officer is appointed after successful completion of the academy?",
+  promotion_applications_received =
+    "Did your agency receive any applications for promotion during the above time period?",
+  promotion_civil_service = "Promotion governed by Civil Service Regulations?",
+  promotion_civil_service_all_ranks =
+    "Promotions governed by Civil Service Regulations for all ranks?",
+  promotion_practice_civil_service_list = "Promotion Practices - Civil service exam list",
+  promotion_practice_non_civil_service_list =
+    "Promotion Practices - Non-civil service exam list",
+  promotion_practice_interview = "Promotion practices - Promotional Interview"
+)
+stopifnot(setequal(names(agency_raw),
+                   c("Year", "County", "Agency", practice_columns)))
+
+agency_practice <- agency_raw %>%
+  add_agency_id() %>%
+  rename(year = Year, all_of(practice_columns)) %>%
+  mutate(across(all_of(names(practice_columns)), ~ to_logical(.x, "Yes", "No")))
+
+
+## -----------------------------------------------------------------------------
+race_levels <- c("American Indian or Alaska Native", "Asian", "Black or African American",
+                 "Hispanic", "Native Hawaiian or other Pacific Islander", "Other",
+                 "Two or more races", "White")
+gender_levels <- c("Male", "Female", "X or Non-Binary")
+age_range_levels <- c("25 or less", "26-35", "36-45", "46-55", "56-65", "66+")
+rank_levels <- c("Police Aide", "Officer", "Corporal", "Investigator", "Detective",
+                 "Special Agent", "Correctional Officer", "Sergeant", "Detective Sergeant",
+                 "Lieutenant", "Detective Lieutenant", "Captain", "Detective Captain",
+                 "Major", "Lt. Colonel", "Deputy Chief", "Chief", "Warden",
+                 "Undersheriff", "Sheriff")
+
+to_age_range <- function(x) {
+  to_factor(x, age_range_levels) %>% factor(levels = age_range_levels, ordered = TRUE)
+}
+
+officer <- officer_raw %>%
+  add_agency_id() %>%
+  transmute(
+    year = Year,
+    agency_id,
+    officer_race = to_factor(`Rae/Ethnicity`, race_levels),
+    officer_age_range = to_age_range(`Age Range`),
+    officer_gender = to_factor(Gender, gender_levels),
+    eligible_for_promotion = to_logical(`Eligible for Promotion?`,
+                                        "Eligible for promotion", "Not eligible"),
+    applied_for_promotion = to_logical(`Applied for Promotion?`,
+                                       "Applied for promotion", "Did not apply"),
+    promoted = to_logical(`Promoted?`, "Promoted", "Not promoted"),
+    old_rank = to_factor(`Old Rank`, rank_levels),
+    new_rank = to_factor(`New Rank`, rank_levels),
+    officer_count = as.integer(`Number of Officers`)
   )
-  tbl %>%
-    mutate(agency_county=str_to_title(agency_county)) %>%
-    mutate(agency_county=paste0(agency_county, " County")) %>%
-    mutate(agency_county=factor(agency_county, county_levels))
-}
-
-agency <- agency %>% fix_agency_county()
 
 
-## ----------------------------------------------------------------------------------
-fix_agency_name <- function(tbl) {
-  tbl %>%
-    mutate(
-      agency_name = case_when(
-        agency_name == "Sussex Co Sheriff'S Dept" ~ "Sussex Co Sheriffs Dept",
-        agency_name == "Cumberland Co Sheriff'S Dept" ~ "Cumberland Co Sheriffs Dept",
-        agency_name == "Hunterdon Co Sheriff'S Dept" ~ "Hunterdon Co Sheriffs Dept",
-        agency_name == "Burlington County Sheriffs Off" ~ "Burlington Co Sheriffs Office",
-        agency_name == "Mercer Co Prosecutor Offfice" ~ "Mercer Co Prosecutors Office",
-        agency_name == "Hudson Co Prosecutor Office" ~ "Hudson Co Prosecutors Office",
-        agency_name == "Somerset County Sheriff's Office" ~ "Somerset Co Sheriffs Office",
-        agency_name == "Totowa Boro  PD" ~ "Totowa Boro PD",
-        agency_name == "New Jersey Institute Of Technol" ~ "New Jersey Institute Of Technology",
-        agency_name == "NJ Div Criminal Justice - Trenton" ~ "NJ Division of Criminal Justice",
-        agency_name == "Toms River Township" ~ "Toms River Twp PD",
-        agency_name == "Hardyston Twp Police Dept" ~ "Hardyston Twp PD",
-        agency_name == "Linden Police Department" ~ "Linden PD",
-        TRUE ~ agency_name
-      )
-    )
-}
+## -----------------------------------------------------------------------------
+applicant_type_levels <- c("Direct Hire", "CSC Exam Exempt Direct Hire", "Transfer",
+                           "Waiver")
+outcome_levels <- c("Appointed to Agency", "Not Appointed", "Pending")
+reason_levels <- c("Academy Failure", "Applicant Withdrawal", "Defer",
+                   "Did not meet minimum qualifications",
+                   "Failed background check - Criminal History",
+                   "Failed background check - Financial", "Failed Drug Test",
+                   "Interview Panel Recommendation", "Physical Qualification Exam",
+                   "Residency Requirement", "Written Exam", "Other")
 
-agency <- agency %>% fix_agency_name()
-
-
-## ----------------------------------------------------------------------------------
-agency_type_levels <- c("State-wide", "County", "Municipal", 
-                        "Multiple Municipalities", "Not Provided")
-agency <- agency %>%
-  mutate(agency_type = factor(agency_type, agency_type_levels))
-
-stopifnot(0 == agency %>% filter(is.na(agency_type)) %>% nrow())
-
-
-## ----------------------------------------------------------------------------------
-agency <- agency %>%
-  mutate(agency_type = if_else(
-    agency_name == "Chester PD", 
-    factor("Multiple Municipalities", agency_type_levels), agency_type))
-
-
-## ----------------------------------------------------------------------------------
-agency <- agency %>% 
-  mutate(hiring_governed_by_civil_service = 
-           str_to_lower(hiring_governed_by_civil_service)) %>%
-  mutate(hiring_governed_by_civil_service=case_when(
-    hiring_governed_by_civil_service == "yes" ~ TRUE,
-    hiring_governed_by_civil_service == "no" ~ FALSE,
-    TRUE ~ NA
-  )) 
-
-
-## ----------------------------------------------------------------------------------
-stopifnot(
-  setequal(
-    agency %>% 
-      filter(agency_type == "Municipal") %>%
-      filter(!str_detect(agency_name, "PD$")) %>%
-      pull(agency_name),
-    c("Cherry Hill Campus Police", 
-      "Stevens Institute Of Technology", 
-      "Princeton University Police")
+applicant <- applicant_raw %>%
+  add_agency_id() %>%
+  transmute(
+    year = Year,
+    agency_id,
+    applicant_race = to_factor(`Race/Ethnicity`, race_levels),
+    applicant_age_range = to_age_range(`Age Range`),
+    applicant_gender = to_factor(Gender, gender_levels),
+    applicant_type = to_factor(`Applicant type`, applicant_type_levels),
+    outcome = to_factor(Outcome, outcome_levels),
+    no_appointment_reason =
+      to_factor(str_trim(`Reason for no appointment`), reason_levels),
+    applicant_count = as.integer(`Number of Applicants`)
   )
+
+
+## -----------------------------------------------------------------------------
+stopifnot(
+  !anyDuplicated(agency_practice %>% select(year, agency_id)),
+  !anyDuplicated(officer %>% select(-officer_count)),
+  !anyDuplicated(applicant %>% select(-applicant_count))
 )
 
 
-## ----------------------------------------------------------------------------------
-municipality_lookup <- agency %>% 
-  filter(agency_type == "Municipal") %>%
-  filter(str_detect(agency_name, " PD$")) %>%
-  mutate(agency_no_pd = str_remove(agency_name, " PD$")) %>%
-  mutate(municipality = NA_character_) %>%
-  select(agency_county, agency_name, agency_no_pd, municipality)
-municipality_lookup
-
-
-## ----------------------------------------------------------------------------------
-add_test_municipalities <- function(municipality_lookup) {
-  municipality_lookup %>% 
-    filter(is.na(municipality)) %>%
-    select(agency_name, county=agency_county, municipality=test_municipality) %>%
-    inner_join(njoagleod::municipality, by=c("county", "municipality")) %>%
-    right_join(municipality_lookup, by=c("agency_name", "county"="agency_county")) %>%
-    mutate(municipality = if_else(
-      is.na(municipality.y), 
-      municipality.x, 
-      municipality.y)) %>%
-    select(agency_county=county, agency_name, agency_no_pd, municipality)
-}
-
-
-## ----------------------------------------------------------------------------------
-municipality_lookup <- municipality_lookup %>% 
-  #filter(is.na(municipality))
-  mutate(test_municipality = paste0(agency_no_pd, " city")) %>%
-  add_test_municipalities() %>% 
-  #filter(is.na(municipality))
-  mutate(test_municipality = paste0(agency_no_pd, " town")) %>%
-  add_test_municipalities() %>% 
-  #filter(is.na(municipality))
-  mutate(test_municipality = paste0(agency_no_pd, " village")) %>%
-  add_test_municipalities() %>% 
-  #filter(is.na(municipality))
-  mutate(test_municipality = paste0(agency_no_pd, " borough")) %>%
-  add_test_municipalities() %>% 
-  #filter(is.na(municipality))
-  mutate(test_municipality = paste0(agency_no_pd, " township")) %>%
-  add_test_municipalities() %>% 
-  #filter(is.na(municipality))
-  mutate(test_municipality = str_replace(agency_no_pd, "City", "city")) %>%
-  add_test_municipalities() %>% 
-  #filter(is.na(municipality))
-  mutate(test_municipality = str_replace(agency_no_pd, "Twp", "township")) %>%
-  add_test_municipalities() %>% 
-  #filter(is.na(municipality))
-  mutate(test_municipality = str_replace(agency_no_pd, "Boro", "borough")) %>%
-  add_test_municipalities() %>% 
-  #filter(is.na(municipality))
-  mutate(test_municipality = str_replace(agency_no_pd, "Town", "town")) %>%
-  add_test_municipalities() %>% 
-  #filter(is.na(municipality))
-  mutate(test_municipality = str_replace(agency_no_pd, "Village", "village")) %>%
-  add_test_municipalities() %>% 
-  #filter(is.na(municipality))
-  mutate(test_municipality = paste0(agency_no_pd, " City city")) %>%
-  add_test_municipalities()
-
-
-## ----------------------------------------------------------------------------------
-municipality_lookup <- municipality_lookup %>% 
-  mutate(municipality = case_when(
-    agency_name == "Mt. Ephraim PD" ~ "Mount Ephraim borough",
-    agency_name == "Orange PD" ~ "City of Orange township",
-    agency_name == "South Orange PD" ~ "South Orange Village township",
-    agency_name == "Avon-By-The-Sea PD" ~ "Avon-by-the-Sea borough",
-    agency_name == "Bayhead Boro PD" ~ "Bay Head borough",
-    agency_name == "Oceangate Boro PD" ~ "Ocean Gate borough",
-    agency_name == "Peapack-Gladstone PD" ~ "Peapack and Gladstone borough",
-    TRUE ~ municipality
-  ))
-
-
-## ----------------------------------------------------------------------------------
-municipality_lookup <- municipality_lookup %>% 
-  filter(!(agency_name %in%
-             c("Monmouth University PD",
-               "Washington Park PD"))) %>%
-  select(-agency_no_pd)
-
-# Check there are no mor NAs
-stopifnot(0 ==
-            municipality_lookup %>% filter(is.na(municipality)) %>% nrow())
-
-# Check that every municipality is in the lookup table
-stopifnot(0 ==
-            municipality_lookup %>%
-            anti_join(njoagleod::municipality, by = c("agency_county" = "county", "municipality")) %>%
-            nrow())
-
-
-## ----------------------------------------------------------------------------------
-agency <- agency %>% 
-  left_join(municipality_lookup, by=c("agency_county", "agency_name"))
-
-
-## ----------------------------------------------------------------------------------
-officer <- officer_2021 %>%
-  rename(agency_county=County,
-         agency_name=Agency,
-         officer_age=Age,
-         officer_race=`Race/Ethnicity`,
-         officer_gender=Gender
-         ) %>%
-  mutate(year=2021) %>% 
-  relocate(year)
-
-
-## ----------------------------------------------------------------------------------
-officer <- officer %>% 
-  fix_agency_county() %>% 
-  fix_agency_name()
-
-
-## ----------------------------------------------------------------------------------
-# Save this value for the check at the end
-officer_race_not_provided <- officer %>% 
-  filter(officer_race=="Not provided") %>%
-  nrow()
-
-# Now do the mapping
-race_levels <- levels(incident$officer_race)
-officer <- officer %>% 
-  mutate(officer_race = str_to_title(officer_race)) %>%
-  mutate(officer_race = case_when(
-    officer_race == "American Indian Or Alaska Native" ~ "American Indian",
-    officer_race == "Black Or African American" ~ "Black",
-    officer_race == "Native Hawaiian Or Other Pacific Islander" ~ "Native Hawaiian or other Pacific Islander",
-    officer_race == "Not Provided" ~ NA_character_,
-    officer_race == "Two Or More Races" ~ "Two or more races",
-    TRUE ~ officer_race
-  )) %>% 
-  mutate(officer_race=factor(officer_race, levels=race_levels))
-
-# Check that we did not introduce any more `NA`s than we meant to.
+## -----------------------------------------------------------------------------
 stopifnot(
-  officer_race_not_provided == 
-    officer %>% filter(is.na(officer_race)) %>% nrow()
+  all(officer$officer_count > 0),
+  all(applicant$applicant_count > 0),
+  sum(officer$officer_count) == sum(officer_raw$`Number of Officers`),
+  sum(applicant$applicant_count) == sum(applicant_raw$`Number of Applicants`)
+)
+officer %>% count(year, wt = officer_count, name = "officers")
+applicant %>% count(year, wt = applicant_count, name = "applicants")
+
+
+## -----------------------------------------------------------------------------
+agency_years <- bind_rows(
+  agency_practice %>% distinct(agency_id, year),
+  officer %>% distinct(agency_id, year),
+  applicant %>% distinct(agency_id, year)
+) %>%
+  distinct()
+stopifnot(
+  agency_years %>%
+    left_join(agency, by = join_by(agency_id, between(year, first_year, final_year))) %>%
+    count(agency_id, year) %>%
+    with(all(n == 1)),
+  agency_years %>%
+    inner_join(agency, by = join_by(agency_id, between(year, first_year, final_year))) %>%
+    nrow() == nrow(agency_years)
 )
 
 
-## ----------------------------------------------------------------------------------
-# Save this value for the check at the end
-officer_gender_not_provided <- officer %>% 
-  filter(officer_gender=="Not Provided") %>%
-  nrow()
+## -----------------------------------------------------------------------------
+stopifnot(setequal(agency$agency_id, agency_years$agency_id))
 
-# Now do the mapping
-gender_levels <- levels(njoaguof::incident$officer_gender)
-officer <- officer %>% 
-  mutate(officer_gender=case_when(
-    officer_gender == "Not Provided" ~ NA_character_,
-    officer_gender == "X Or Non-Binary" ~ "Gender Non-Conforming/X",
-    TRUE ~ officer_gender
-  )) %>%
-  mutate(officer_gender=factor(officer_gender, levels=gender_levels))
 
-# Check that we did not introduce any more `NA`s than we meant to.
+## -----------------------------------------------------------------------------
+agency_practice %>%
+  anti_join(officer, by = c("agency_id", "year")) %>%
+  left_join(agency, by = join_by(agency_id, between(year, first_year, final_year))) %>%
+  select(year, agency_county, agency_name)
+
+
+## -----------------------------------------------------------------------------
+uof_agencies <- njoaguof::incident %>%
+  distinct(agency_county, agency_name) %>%
+  mutate(agency_county = as.character(agency_county)) %>%
+  filter(!str_detect(agency_name, "Corrections"),
+         agency_name != "State Parole Board")
+uof_aliases <- agency_alias %>% filter(source == "njoaguof")
 stopifnot(
-  officer_gender_not_provided == 
-    officer %>% filter(is.na(officer_gender)) %>% nrow()
-)
-
-
-## ----------------------------------------------------------------------------------
-drbapd <- "Delaware River and Bay Authority Police Department"
-agency %>% filter(agency_name==drbapd)
-officer %>% filter(agency_name==drbapd) %>% 
-  group_by(agency_county) %>%
-  count()
-
-
-## ----------------------------------------------------------------------------------
-# In agency, filter out the non-Salem County DRBA agencies.
-agency <- agency %>% filter(agency_name != drbapd |
-                    (agency_name == drbapd &
-                       agency_county == "Salem County"))
-# Now replace Salem County with NA
-agency$agency_county[agency$agency_name == drbapd] <- NA
-
-# Now do the same for the officer table
-officer <- officer %>% filter(agency_name != drbapd |
-                              (agency_name == drbapd &
-                                 agency_county == "Salem County"))
-officer$agency_county[officer$agency_name == drbapd] <- NA
-
-
-## ----------------------------------------------------------------------------------
-stopifnot(
-  0 ==
-    agency %>%
-    group_by(year, agency_county, agency_name) %>%
-    count() %>%
-    filter(n > 1) %>%
+  0 == uof_agencies %>%
+    anti_join(uof_aliases, by = c("agency_county", "agency_name")) %>%
     nrow()
 )
 
 
-## ----------------------------------------------------------------------------------
-stopifnot(
-  0 ==
-    officer %>%
-    select(year, agency_county, agency_name) %>%
-    unique() %>%
-    anti_join(agency, by = names(.)) %>%
-    nrow()
-)
-
-
-## ----------------------------------------------------------------------------------
-stopifnot(
-  0 ==
-    agency %>%
-    select(year, agency_county, agency_name) %>%
-    anti_join(officer, by = names(.)) %>%
-    nrow()
-)
-
-
-## ----------------------------------------------------------------------------------
-stopifnot(
-  njoaguof::incident %>%
-    select(agency_county, agency_name) %>%
-    unique() %>%
-    anti_join(agency, by = names(.)) %>%
-    filter(!str_detect(agency_name, "Corrections")) %>%
-    pull(agency_name) %in%
-    c(
-      "Toms River Township",
-      "Hardyston Twp Police Dept",
-      "Linden Police Department",
-      "Freehold Boro PD",
-      "Washington Twp PD",
-      "College Of New Jersey",
-      "State Parole Board"
-    ) %>%
-    all()
-)
+## -----------------------------------------------------------------------------
+agency_alias <- agency_alias %>% arrange(agency_id, source, agency_county, agency_name)
+agency_municipality <- agency_municipality %>% arrange(agency_id, GEOID_Y2K, first_year)
+agency_practice <- agency_practice %>% arrange(year, agency_id)
+officer <- officer %>% arrange(year, agency_id)
+applicant <- applicant %>% arrange(year, agency_id)
 

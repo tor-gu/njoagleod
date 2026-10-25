@@ -5,20 +5,26 @@ Version: 1.1.3
 Authors@R: 
     person("Tor", "Gunston", , "tor.gunston@protonmail.com", role = c("aut", "cre"))
 Description: This is cleaned-up version of the NJ OAG Law Enforcement Officer 
-  Diversity database available from https://www.njoag.gov/policerecruiting/.
+  Diversity database available from https://www.njoag.gov/policerecruiting/:
+  agencies and their hiring and promotion practices, and counts of officers and
+  applicants by demographics, for 2021 onward.
 License: CC0
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.2
 Suggests: 
-    dplyr,
+    devtools,
+    dplyr (>= 1.1.0),
     knitr,
+    lubridate,
     magrittr,
+    njmunicipalities,
     njoaguof,
     readr,
+    readxl,
     rmarkdown,
     stringr,
-    tidyr
+    usethis
 Depends: 
-    R (>= 2.10)
+    R (>= 3.5)
 VignetteBuilder: knitr
+Config/roxygen2/version: 8.1.0

@@ -8,4 +8,3 @@
 ^README\.Rmd$
 ^\.github$
 ^_dependencies\.R$
-^\.renvignore$
