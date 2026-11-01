@@ -16,23 +16,30 @@ Diversity database available from
 
 This package is built from the 2025 NJ OAG release, which covers
 officers for 2021–2025 and agencies and applicants for 2022–2025. It
-contains six tables.
+contains three tables.
 
-- `agency` One row per law enforcement agency (per name, if the agency
-  is renamed). Each agency has a stable `agency_id`.
-- `agency_alias` Every spelling of every agency’s name, in the NJ OAG
-  releases and in the [`njoaguof`](https://github.com/tor-gu/njoaguof)
-  package, mapped to its `agency_id`.
-- `agency_municipality` The municipalities each agency serves,
-  identified as in the
-  [`njmunicipalities`](https://github.com/tor-gu/njmunicipalities)
-  package.
 - `agency_practice` Each agency’s hiring and promotion practices, by
   year.
 - `officer` Counts of officers by year, agency, race, age range, gender
   and promotion.
 - `applicant` Counts of applicants by year, agency, race, age range,
   gender, applicant type and outcome.
+
+The tables identify agencies by `agency_id`, a stable identifier from
+the [`njlea`](https://github.com/tor-gu/njlea) registry of NJ law
+enforcement agencies. This package re-exports njlea’s functions for
+looking agencies up:
+
+- `get_agencies(year)` The agencies in a year, with their names as of
+  that year, county, level and function.
+- `get_agency_municipalities(year)` The municipalities each agency
+  serves, identified as in the
+  [`njmunicipalities`](https://github.com/tor-gu/njmunicipalities)
+  package.
+- `find_agency(pattern)` Search agency names and every source spelling.
+
+njlea’s tables (`njlea::agency`, `njlea::agency_alias` and the others)
+have the full registry.
 
 ## Examples
 
@@ -41,28 +48,25 @@ library(njoagleod)
 library(dplyr)
 ```
 
-The `agency` table looks like this:
+The agencies in 2025:
 
 ``` r
-agency
-#> # A tibble: 532 × 7
-#>    agency_id first_year final_year agency_county   agency_name agency_type ori  
-#>    <chr>          <int>      <int> <fct>           <chr>       <fct>       <chr>
-#>  1 A0001           2021       2025 Atlantic County Absecon Ci… Municipal   <NA> 
-#>  2 A0002           2021       2025 Atlantic County Atlantic C… Municipal   <NA> 
-#>  3 A0003           2021       2025 Atlantic County Atlantic C… County      <NA> 
-#>  4 A0004           2021       2025 Atlantic County Atlantic C… County      <NA> 
-#>  5 A0005           2021       2025 Atlantic County Brigantine… Municipal   <NA> 
-#>  6 A0006           2021       2025 Atlantic County Egg Harbor… Municipal   <NA> 
-#>  7 A0007           2021       2025 Atlantic County Egg Harbor… Municipal   <NA> 
-#>  8 A0008           2021       2025 Atlantic County Galloway T… Municipal   <NA> 
-#>  9 A0009           2021       2025 Atlantic County Hamilton T… Municipal   <NA> 
-#> 10 A0010           2021       2025 Atlantic County Hammonton … Municipal   <NA> 
-#> # ℹ 522 more rows
+get_agencies(2025)
+#> # A tibble: 543 × 6
+#>    agency_id agency_name     county agency_level agency_function multi_municipal
+#>    <chr>     <chr>           <chr>  <fct>        <fct>           <lgl>          
+#>  1 NJLEA0001 Absecon Police… Atlan… Municipal    Police          FALSE          
+#>  2 NJLEA0002 Atlantic City … Atlan… Municipal    Police          FALSE          
+#>  3 NJLEA0003 Atlantic Count… Atlan… County       Corrections     FALSE          
+#>  4 NJLEA0004 Atlantic Count… Atlan… County       Prosecutor      FALSE          
+#>  5 NJLEA0005 Atlantic Count… Atlan… County       Sheriff         FALSE          
+#>  6 NJLEA0006 Brigantine Pol… Atlan… Municipal    Police          FALSE          
+#>  7 NJLEA0007 Egg Harbor Cit… Atlan… Municipal    Police          FALSE          
+#>  8 NJLEA0008 Egg Harbor Tow… Atlan… Municipal    Police          FALSE          
+#>  9 NJLEA0009 Galloway Towns… Atlan… Municipal    Police          FALSE          
+#> 10 NJLEA0010 Hamilton Towns… Atlan… Municipal    Police          FALSE          
+#> # ℹ 533 more rows
 ```
-
-The columns `agency_id` and `first_year` form the primary key. The other
-tables refer to agencies by `agency_id` only.
 
 The `officer` and `applicant` tables are count tables: each row is a
 combination of characteristics, and `officer_count` (or
@@ -73,16 +77,16 @@ officer
 #> # A tibble: 44,711 × 11
 #>     year agency_id officer_race              officer_age_range officer_gender
 #>    <int> <chr>     <fct>                     <ord>             <fct>         
-#>  1  2021 A0001     Asian                     36-45             Female        
-#>  2  2021 A0001     Black or African American 26-35             Male          
-#>  3  2021 A0001     White                     25 or less        Male          
-#>  4  2021 A0001     White                     26-35             Male          
-#>  5  2021 A0001     White                     36-45             Male          
-#>  6  2021 A0001     White                     46-55             Female        
-#>  7  2021 A0001     White                     46-55             Male          
-#>  8  2021 A0001     White                     56-65             Male          
-#>  9  2021 A0002     Asian                     25 or less        Male          
-#> 10  2021 A0002     Asian                     26-35             Male          
+#>  1  2021 NJLEA0001 Asian                     36-45             Female        
+#>  2  2021 NJLEA0001 Black or African American 26-35             Male          
+#>  3  2021 NJLEA0001 White                     25 or less        Male          
+#>  4  2021 NJLEA0001 White                     26-35             Male          
+#>  5  2021 NJLEA0001 White                     36-45             Male          
+#>  6  2021 NJLEA0001 White                     46-55             Female        
+#>  7  2021 NJLEA0001 White                     46-55             Male          
+#>  8  2021 NJLEA0001 White                     56-65             Male          
+#>  9  2021 NJLEA0002 Asian                     25 or less        Male          
+#> 10  2021 NJLEA0002 Asian                     26-35             Male          
 #> # ℹ 44,701 more rows
 #> # ℹ 6 more variables: eligible_for_promotion <lgl>,
 #> #   applied_for_promotion <lgl>, promoted <lgl>, old_rank <fct>,
@@ -110,114 +114,98 @@ officer %>%
 #> 9 <NA>                                           284
 ```
 
-To attach agency names to a table, join `agency` on the `agency_id` and
-the years each name was in use:
+An agency’s name can change from year to year, so to attach names to a
+table that covers several years, get each year’s agencies and join on
+`agency_id` and `year`:
 
 ``` r
+agency_names <- function(years) {
+  bind_rows(lapply(years, function(y) mutate(get_agencies(y), year = y)))
+}
+
 officer %>%
   count(year, agency_id, wt = officer_count, name = "officers") %>%
-  left_join(agency, join_by(agency_id, between(year, first_year, final_year))) %>%
-  select(year, agency_county, agency_name, officers) %>%
+  left_join(agency_names(2021:2025), by = c("agency_id", "year")) %>%
+  select(year, county, agency_name, officers) %>%
   arrange(desc(officers))
 #> # A tibble: 2,630 × 4
-#>     year agency_county agency_name             officers
-#>    <int> <fct>         <chr>                      <int>
-#>  1  2025 <NA>          New Jersey State Police     3351
-#>  2  2024 <NA>          New Jersey State Police     3286
-#>  3  2023 <NA>          New Jersey State Police     3264
-#>  4  2022 <NA>          New Jersey State Police     3117
-#>  5  2021 <NA>          New Jersey State Police     3073
-#>  6  2022 Essex County  Newark PD                   1149
-#>  7  2025 Essex County  Newark PD                   1105
-#>  8  2024 Essex County  Newark PD                   1046
-#>  9  2021 Essex County  Newark PD                   1034
-#> 10  2023 Essex County  Newark PD                   1027
+#>     year county       agency_name              officers
+#>    <int> <chr>        <chr>                       <int>
+#>  1  2025 <NA>         New Jersey State Police      3351
+#>  2  2024 <NA>         New Jersey State Police      3286
+#>  3  2023 <NA>         New Jersey State Police      3264
+#>  4  2022 <NA>         New Jersey State Police      3117
+#>  5  2021 <NA>         New Jersey State Police      3073
+#>  6  2022 Essex County Newark Police Department     1149
+#>  7  2025 Essex County Newark Police Department     1105
+#>  8  2024 Essex County Newark Police Department     1046
+#>  9  2021 Essex County Newark Police Department     1034
+#> 10  2023 Essex County Newark Police Department     1027
 #> # ℹ 2,620 more rows
 ```
 
 ### Municipalities
 
-`agency_municipality` identifies municipalities by `GEOID_Y2K`, the
-stable municipality identifier of the `njmunicipalities` package. It
-does not change when a municipality is renamed or assigned a new GEOID.
-To get the name and GEOID in effect in a given year:
+`get_agency_municipalities()` lists the municipalities each agency
+serves, with their names and GEOIDs as of the year asked for:
 
 ``` r
-agency_municipality %>%
-  left_join(
-    njmunicipalities::get_municipalities(2025, geoid_year = 2000,
-                                         geoid_ref_as_ref_column = TRUE),
-    by = c("GEOID_Y2K" = "GEOID_ref")
-  ) %>%
-  left_join(agency %>% filter(first_year <= 2025, final_year >= 2025), by = "agency_id") %>%
-  select(agency_name, GEOID, county, municipality)
-#> # A tibble: 470 × 4
-#>    agency_name        GEOID      county          municipality        
-#>    <chr>              <chr>      <chr>           <chr>               
-#>  1 Absecon City PD    3400100100 Atlantic County Absecon city        
-#>  2 Atlantic City PD   3400102080 Atlantic County Atlantic City city  
-#>  3 Brigantine PD      3400107810 Atlantic County Brigantine city     
-#>  4 Egg Harbor City PD 3400120350 Atlantic County Egg Harbor City city
-#>  5 Egg Harbor Twp PD  3400120290 Atlantic County Egg Harbor township 
-#>  6 Galloway Twp PD    3400125560 Atlantic County Galloway township   
-#>  7 Hamilton Twp PD    3400129280 Atlantic County Hamilton township   
-#>  8 Hammonton PD       3400129430 Atlantic County Hammonton town      
-#>  9 Linwood City PD    3400140530 Atlantic County Linwood city        
-#> 10 Longport PD        3400141370 Atlantic County Longport borough    
-#> # ℹ 460 more rows
+get_agency_municipalities(2025) %>%
+  left_join(get_agencies(2025) %>% select(agency_id, agency_name), by = "agency_id") %>%
+  select(agency_name, GEOID, county, municipality, link_type)
+#> # A tibble: 471 × 5
+#>    agency_name                           GEOID     county municipality link_type
+#>    <chr>                                 <chr>     <chr>  <chr>        <fct>    
+#>  1 Absecon Police Department             34001001… Atlan… Absecon city Home     
+#>  2 Atlantic City Police Department       34001020… Atlan… Atlantic Ci… Home     
+#>  3 Brigantine Police Department          34001078… Atlan… Brigantine … Home     
+#>  4 Egg Harbor City Police Department     34001203… Atlan… Egg Harbor … Home     
+#>  5 Egg Harbor Township Police Department 34001202… Atlan… Egg Harbor … Home     
+#>  6 Galloway Township Police Department   34001255… Atlan… Galloway to… Home     
+#>  7 Hamilton Township Police Department   34001292… Atlan… Hamilton to… Home     
+#>  8 Hammonton Police Department           34001294… Atlan… Hammonton t… Home     
+#>  9 Linwood Police Department             34001405… Atlan… Linwood city Home     
+#> 10 Longport Police Department            34001413… Atlan… Longport bo… Home     
+#> # ℹ 461 more rows
 ```
 
 Agencies that serve more than one municipality have one row for each:
 
 ``` r
-agency %>%
-  filter(agency_type == "Multiple Municipalities") %>%
-  inner_join(agency_municipality, by = "agency_id") %>%
-  left_join(
-    njmunicipalities::get_municipalities(2025, geoid_year = 2000,
-                                         geoid_ref_as_ref_column = TRUE),
-    by = c("GEOID_Y2K" = "GEOID_ref")
-  ) %>%
-  select(agency_name, municipality)
-#> # A tibble: 18 × 2
-#>    agency_name       municipality          
-#>    <chr>             <chr>                 
-#>  1 Haddon Twp PD     Audubon Park borough  
-#>  2 Haddon Twp PD     Haddon township       
-#>  3 Cape May City PD  Cape May city         
-#>  4 Cape May City PD  Cape May Point borough
-#>  5 Cape May City PD  West Cape May borough 
-#>  6 Franklin Twp PD   Buena borough         
-#>  7 Franklin Twp PD   Franklin township     
-#>  8 Franklin Twp PD   Newfield borough      
-#>  9 Woolwich Twp PD   Swedesboro borough    
-#> 10 Woolwich Twp PD   Woolwich township     
-#> 11 Belmar PD         Belmar borough        
-#> 12 Belmar PD         Lake Como borough     
-#> 13 Chester PD        Chester borough       
-#> 14 Chester PD        Chester township      
-#> 15 Washington Twp PD Califon borough       
-#> 16 Washington Twp PD Washington township   
-#> 17 Wharton Boro PD   Mine Hill township    
-#> 18 Wharton Boro PD   Wharton borough
+get_agencies(2025) %>%
+  filter(multi_municipal) %>%
+  inner_join(get_agency_municipalities(2025), by = "agency_id",
+             suffix = c("_agency", "")) %>%
+  select(agency_name, municipality, link_type)
+#> # A tibble: 22 × 3
+#>    agency_name                         municipality           link_type
+#>    <chr>                               <chr>                  <fct>    
+#>  1 Camden County Police Department     Camden city            Service  
+#>  2 Camden County Police Department     Woodlynne borough      Service  
+#>  3 Haddon Township Police Department   Haddon township        Home     
+#>  4 Haddon Township Police Department   Audubon Park borough   Service  
+#>  5 Cape May Police Department          Cape May city          Home     
+#>  6 Cape May Police Department          Cape May Point borough Service  
+#>  7 Cape May Police Department          West Cape May borough  Service  
+#>  8 Franklin Township Police Department Franklin township      Home     
+#>  9 Franklin Township Police Department Buena borough          Service  
+#> 10 Franklin Township Police Department Newfield borough       Service  
+#> # ℹ 12 more rows
 ```
 
 ### Use with `njoaguof`
 
-`agency_alias` maps the agency names used by `njoaguof` to `agency_id`,
-so use-of-force incidents can be set against what this package knows
-about each agency: its officers and its hiring practices. Here we count
-2024 incidents per agency.
+njlea maps the agency names used by the
+[`njoaguof`](https://github.com/tor-gu/njoaguof) use-of-force package to
+the same `agency_id`, so use-of-force incidents can be set against what
+this package knows about each agency: its officers and its hiring
+practices. Here we count 2024 incidents per agency.
 
 ``` r
-uof_agency <- agency_alias %>%
-  filter(source == "njoaguof") %>%
-  select(agency_county, agency_name, agency_id)
-
 incidents_2024 <- njoaguof::incident %>%
   filter(format(incident_date_1, "%Y") == "2024") %>%
-  mutate(agency_county = as.character(agency_county)) %>%
-  inner_join(uof_agency, by = c("agency_county", "agency_name")) %>%
+  mutate(agency_id = njlea::resolve_agency("njoaguof", as.character(agency_county),
+                                           agency_name)) %>%
   count(agency_id, name = "incidents")
 ```
 
@@ -243,8 +231,7 @@ agency_2024 <- officers_2024 %>%
   left_join(agency_practice %>% filter(year == 2024) %>%
               select(agency_id, hiring_civil_service),
             by = "agency_id") %>%
-  left_join(agency %>% filter(first_year <= 2024, final_year >= 2024) %>%
-              select(agency_id, agency_name, agency_type),
+  left_join(get_agencies(2024) %>% select(agency_id, agency_name, agency_level),
             by = "agency_id")
 ```
 
@@ -261,25 +248,25 @@ agency_2024 %>%
   knitr::kable(digits = 0)
 ```
 
-| agency_name                      | officers | pct_female | pct_35_or_under | hiring_civil_service | incidents_per_100_officers |
-|:---------------------------------|---------:|-----------:|----------------:|:---------------------|---------------------------:|
-| Vineland PD                      |      146 |         12 |              52 | TRUE                 |                        283 |
-| Pleasantville PD                 |       52 |         15 |              58 | TRUE                 |                        271 |
-| Delaware River Port Authority PD |       96 |          7 |              47 | FALSE                |                        219 |
-| New Jersey Transit Police        |      308 |          8 |              45 | FALSE                |                        215 |
-| Neptune Twp PD                   |       86 |          8 |              41 | FALSE                |                        193 |
-| Pennsauken Twp PD                |       88 |         16 |              55 | TRUE                 |                        189 |
-| Hoboken PD                       |      140 |         11 |              53 | TRUE                 |                        181 |
-| Glassboro PD                     |       52 |         12 |              50 | FALSE                |                        181 |
-| Trenton PD                       |      236 |         18 |              43 | TRUE                 |                        177 |
-| Asbury Park PD                   |       87 |          8 |              33 | TRUE                 |                        176 |
+| agency_name                                     | officers | pct_female | pct_35_or_under | hiring_civil_service | incidents_per_100_officers |
+|:------------------------------------------------|---------:|-----------:|----------------:|:---------------------|---------------------------:|
+| Vineland Police Department                      |      146 |         12 |              52 | TRUE                 |                        283 |
+| Pleasantville Police Department                 |       52 |         15 |              58 | TRUE                 |                        271 |
+| Delaware River Port Authority Police Department |       96 |          7 |              47 | FALSE                |                        219 |
+| New Jersey Transit Police Department            |      308 |          8 |              45 | FALSE                |                        215 |
+| Neptune Township Police Department              |       86 |          8 |              41 | FALSE                |                        193 |
+| Pennsauken Township Police Department           |       88 |         16 |              55 | TRUE                 |                        189 |
+| Hoboken Police Department                       |      140 |         11 |              53 | TRUE                 |                        181 |
+| Glassboro Police Department                     |       52 |         12 |              50 | FALSE                |                        181 |
+| Trenton Police Department                       |      236 |         18 |              43 | TRUE                 |                        177 |
+| Asbury Park Police Department                   |       87 |          8 |              33 | TRUE                 |                        176 |
 
 And, for municipal agencies, incidents per 100 officers by Civil Service
 hiring and by the share of officers aged 35 or under:
 
 ``` r
 agency_2024 %>%
-  filter(agency_type == "Municipal") %>%
+  filter(agency_level == "Municipal") %>%
   mutate(pct_35_or_under = cut(pct_35_or_under, c(0, 30, 45, 60, 100),
                                include.lowest = TRUE)) %>%
   group_by(hiring_civil_service, pct_35_or_under) %>%
@@ -290,13 +277,13 @@ agency_2024 %>%
 #>   hiring_civil_service pct_35_or_under agencies incidents_per_100_officers
 #>   <lgl>                <fct>              <int>                      <dbl>
 #> 1 FALSE                [0,30]                23                       48.2
-#> 2 FALSE                (30,45]               89                       58.1
+#> 2 FALSE                (30,45]               91                       57.7
 #> 3 FALSE                (45,60]              125                       51.3
-#> 4 FALSE                (60,100]              40                       55.8
+#> 4 FALSE                (60,100]              44                       56.2
 #> 5 TRUE                 [0,30]                15                       50.3
-#> 6 TRUE                 (30,45]               68                       79.3
+#> 6 TRUE                 (30,45]               69                       79.6
 #> 7 TRUE                 (45,60]               66                       96.7
-#> 8 TRUE                 (60,100]              22                      110.
+#> 8 TRUE                 (60,100]              23                      109.
 ```
 
 These are descriptive only: incident rates depend heavily on what each
@@ -307,47 +294,28 @@ the note below).
 
 These are the ways in which this package differs from the source data.
 
-### Agency identifiers and names
+### Agencies
 
-The source identifies agencies by county and name only. This package
-assigns each agency a stable `agency_id`, and records every spelling
-seen in `agency_alias`. The `agency_name` in `agency` is the 2025
-release’s spelling, except for these agencies, where it fixes a
-truncation or follows the “Twp PD” naming of the other agencies:
+The source identifies agencies by county and name only. The `agency_id`,
+the agency names, levels and functions, and the municipalities served
+all come from [`njlea`](https://github.com/tor-gu/njlea), not from the
+source. njlea uses its own canonical names (such as “Absecon Police
+Department” for the source’s “Absecon City PD”), records every source
+spelling in `njlea::agency_alias` (source `"njoag-leod-2025"`), and
+documents its corrections to the source, such as the municipalities
+served under shared-services agreements. `find_agency()` searches the
+names and the source spellings. The source’s “Chester PD”, for instance,
+is Chester Township’s department:
 
 ``` r
-agency_alias %>%
-  filter(source == "njoag-leod-2025") %>%
-  inner_join(agency, by = "agency_id", suffix = c("_source", "")) %>%
-  filter(agency_name_source != agency_name) %>%
-  select(source_name = agency_name_source, agency_name)
-#> # A tibble: 7 × 2
-#>   source_name                     agency_name                       
-#>   <chr>                           <chr>                             
-#> 1 Burlington County Sheriffs Off  Burlington Co Sheriffs Office     
-#> 2 New Jersey Institute Of Technol New Jersey Institute Of Technology
-#> 3 Robbinsville Township Police    Robbinsville Twp PD               
-#> 4 Toms River Township             Toms River Twp PD                 
-#> 5 Hardyston Twp Police Dept       Hardyston Twp PD                  
-#> 6 Linden Police Department        Linden PD                         
-#> 7 Park Police                     New Jersey State Park Police
+find_agency("^Chester PD$")
+#> # A tibble: 3 × 5
+#>   agency_id agency_name                        county    matched_on matched_text
+#>   <chr>     <chr>                              <chr>     <chr>      <chr>       
+#> 1 NJLEA0355 Chester Township Police Department Morris C… njoag-leo… Chester PD  
+#> 2 NJLEA0355 Chester Township Police Department Morris C… njoag-leo… Chester PD  
+#> 3 NJLEA0355 Chester Township Police Department Morris C… njoaguof   Chester PD
 ```
-
-Agencies that the source lists as “State or Other Agency” have
-`agency_county` `NA`.
-
-### Agency type and municipalities
-
-`agency_type` and `agency_municipality` are not in the source data; they
-are assigned by this package. A “Municipal” agency serves one
-municipality, and a “Multiple Municipalities” agency also serves
-municipalities that contract with it for police services;
-`agency_municipality` lists the municipalities each serves. “County” and
-“State-wide” agencies are county and state agencies, including county
-colleges and state universities, and “Other” covers interstate
-authorities and the campus police of private institutions. The sources
-for the shared-services municipalities are recorded in
-`inst/extdata/agency_municipality.csv`.
 
 ### Incomplete agency reports
 
@@ -368,29 +336,29 @@ officer %>%
   mutate(median_officers = median(officers)) %>%
   ungroup() %>%
   filter(median_officers >= 10, officers < median_officers / 2) %>%
-  left_join(agency, join_by(agency_id, between(year, first_year, final_year))) %>%
-  select(year, agency_county, agency_name, officers, median_officers) %>%
-  arrange(year, agency_county, agency_name) %>%
+  left_join(agency_names(2021:2025), by = c("agency_id", "year")) %>%
+  select(year, county, agency_name, officers, median_officers) %>%
+  arrange(year, county, agency_name) %>%
   print(n = Inf)
 #> # A tibble: 16 × 5
-#>     year agency_county     agency_name                 officers median_officers
-#>    <int> <fct>             <chr>                          <int>           <dbl>
-#>  1  2022 Bergen County     Park Ridge PD                      3              21
-#>  2  2022 Cape May County   Cape May Co Sheriffs Office       49             135
-#>  3  2022 Ocean County      Lakewood PD                       20             153
-#>  4  2023 Gloucester County Franklin Twp PD                   11              38
-#>  5  2023 Monmouth County   Rumson PD                          2              19
-#>  6  2024 Camden County     Hi-Nella PD                        2              10
-#>  7  2025 Atlantic County   Linwood City PD                    9              21
-#>  8  2025 Bergen County     Ramsey PD                         14              36
-#>  9  2025 Bergen County     Saddle Brook PD                    5              32
-#> 10  2025 Camden County     Hi-Nella PD                        3              10
-#> 11  2025 Gloucester County Greenwich Twp PD                   8              19
-#> 12  2025 Mercer County     Ewing Twp PD                      28              82
-#> 13  2025 Morris County     Montville Twp PD                  11              40
-#> 14  2025 Morris County     Mountain Lakes PD                  4              12
-#> 15  2025 Ocean County      Lakewood PD                       58             153
-#> 16  2025 Ocean County      Long Beach Twp PD                  8              35
+#>     year county            agency_name                  officers median_officers
+#>    <int> <chr>             <chr>                           <int>           <dbl>
+#>  1  2022 Bergen County     Park Ridge Police Department        3              21
+#>  2  2022 Cape May County   Cape May County Sheriff's O…       49             135
+#>  3  2022 Ocean County      Lakewood Township Police De…       20             153
+#>  4  2023 Gloucester County Franklin Township Police De…       11              38
+#>  5  2023 Monmouth County   Rumson Police Department            2              19
+#>  6  2024 Camden County     Hi-Nella Police Department          2              10
+#>  7  2025 Atlantic County   Linwood Police Department           9              21
+#>  8  2025 Bergen County     Ramsey Police Department           14              36
+#>  9  2025 Bergen County     Saddle Brook Township Polic…        5              32
+#> 10  2025 Camden County     Hi-Nella Police Department          3              10
+#> 11  2025 Gloucester County Greenwich Township Police D…        8              19
+#> 12  2025 Mercer County     Ewing Township Police Depar…       28              82
+#> 13  2025 Morris County     Montville Township Police D…       11              40
+#> 14  2025 Morris County     Mountain Lakes Police Depar…        4              12
+#> 15  2025 Ocean County      Lakewood Township Police De…       58             153
+#> 16  2025 Ocean County      Long Beach Township Police …        8              35
 ```
 
 ### Recoded values

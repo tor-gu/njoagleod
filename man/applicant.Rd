@@ -8,7 +8,8 @@
 A dataframe with 9 columns
 \describe{
  \item{year}{Year}
- \item{agency_id}{Stable agency identifier, as in [agency]}
+ \item{agency_id}{Agency identifier from the njlea package, such as "NJLEA0001"; see
+ [get_agencies()] for names}
  \item{applicant_race}{Applicant race or ethnicity. As in the US Census, Hispanic
  applicants are "Hispanic" regardless of race.}
  \item{applicant_age_range}{Applicant age range (ordered factor)}

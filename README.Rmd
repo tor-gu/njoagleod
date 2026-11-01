@@ -24,19 +24,25 @@ This is a cleaned-up version of the NJ OAG Law Enforcement Officer Diversity
 
 ## Dataset Overview
 This package is built from the 2025 NJ OAG release, which covers officers for
-2021--2025 and agencies and applicants for 2022--2025. It contains six tables.
+2021--2025 and agencies and applicants for 2022--2025. It contains three tables.
 
-* ```agency``` One row per law enforcement agency (per name, if the agency is renamed).
-  Each agency has a stable ```agency_id```.
-* ```agency_alias``` Every spelling of every agency's name, in the NJ OAG releases and in
-  the [```njoaguof```](https://github.com/tor-gu/njoaguof) package, mapped to its
-  ```agency_id```.
-* ```agency_municipality``` The municipalities each agency serves, identified as in the
-  [```njmunicipalities```](https://github.com/tor-gu/njmunicipalities) package.
 * ```agency_practice``` Each agency's hiring and promotion practices, by year.
 * ```officer``` Counts of officers by year, agency, race, age range, gender and promotion.
 * ```applicant``` Counts of applicants by year, agency, race, age range, gender, applicant
   type and outcome.
+
+The tables identify agencies by ```agency_id```, a stable identifier from the
+[```njlea```](https://github.com/tor-gu/njlea) registry of NJ law enforcement agencies.
+This package re-exports njlea's functions for looking agencies up:
+
+* ```get_agencies(year)``` The agencies in a year, with their names as of that year,
+  county, level and function.
+* ```get_agency_municipalities(year)``` The municipalities each agency serves, identified as
+  in the [```njmunicipalities```](https://github.com/tor-gu/njmunicipalities) package.
+* ```find_agency(pattern)``` Search agency names and every source spelling.
+
+njlea's tables (```njlea::agency```, ```njlea::agency_alias``` and the others) have the
+full registry.
 
 ## Examples
 ```{r, message = FALSE}
@@ -44,12 +50,10 @@ library(njoagleod)
 library(dplyr)
 ```
 
-The ```agency``` table looks like this:
+The agencies in 2025:
 ```{r}
-agency
+get_agencies(2025)
 ```
-The columns ```agency_id``` and ```first_year``` form the primary key. The other tables
-refer to agencies by ```agency_id``` only.
 
 The ```officer``` and ```applicant``` tables are count tables: each row is a combination of
 characteristics, and ```officer_count``` (or ```applicant_count```) is the number of people
@@ -64,56 +68,47 @@ officer %>%
   count(officer_race, wt = officer_count, name = "officers")
 ```
 
-To attach agency names to a table, join ```agency``` on the ```agency_id``` and the
-years each name was in use:
+An agency's name can change from year to year, so to attach names to a table that covers
+several years, get each year's agencies and join on ```agency_id``` and ```year```:
 ```{r}
+agency_names <- function(years) {
+  bind_rows(lapply(years, function(y) mutate(get_agencies(y), year = y)))
+}
+
 officer %>%
   count(year, agency_id, wt = officer_count, name = "officers") %>%
-  left_join(agency, join_by(agency_id, between(year, first_year, final_year))) %>%
-  select(year, agency_county, agency_name, officers) %>%
+  left_join(agency_names(2021:2025), by = c("agency_id", "year")) %>%
+  select(year, county, agency_name, officers) %>%
   arrange(desc(officers))
 ```
 
 ### Municipalities
-```agency_municipality``` identifies municipalities by ```GEOID_Y2K```, the stable municipality
-identifier of the ```njmunicipalities``` package. It does not change when a municipality
-is renamed or assigned a new GEOID. To get the name and GEOID in effect in a given year:
+```get_agency_municipalities()``` lists the municipalities each agency serves, with their
+names and GEOIDs as of the year asked for:
 ```{r}
-agency_municipality %>%
-  left_join(
-    njmunicipalities::get_municipalities(2025, geoid_year = 2000,
-                                         geoid_ref_as_ref_column = TRUE),
-    by = c("GEOID_Y2K" = "GEOID_ref")
-  ) %>%
-  left_join(agency %>% filter(first_year <= 2025, final_year >= 2025), by = "agency_id") %>%
-  select(agency_name, GEOID, county, municipality)
+get_agency_municipalities(2025) %>%
+  left_join(get_agencies(2025) %>% select(agency_id, agency_name), by = "agency_id") %>%
+  select(agency_name, GEOID, county, municipality, link_type)
 ```
 Agencies that serve more than one municipality have one row for each:
 ```{r}
-agency %>%
-  filter(agency_type == "Multiple Municipalities") %>%
-  inner_join(agency_municipality, by = "agency_id") %>%
-  left_join(
-    njmunicipalities::get_municipalities(2025, geoid_year = 2000,
-                                         geoid_ref_as_ref_column = TRUE),
-    by = c("GEOID_Y2K" = "GEOID_ref")
-  ) %>%
-  select(agency_name, municipality)
+get_agencies(2025) %>%
+  filter(multi_municipal) %>%
+  inner_join(get_agency_municipalities(2025), by = "agency_id",
+             suffix = c("_agency", "")) %>%
+  select(agency_name, municipality, link_type)
 ```
 
 ### Use with ```njoaguof```
-```agency_alias``` maps the agency names used by ```njoaguof``` to ```agency_id```, so
-use-of-force incidents can be set against what this package knows about each agency: its
-officers and its hiring practices. Here we count 2024 incidents per agency.
+njlea maps the agency names used by the
+[```njoaguof```](https://github.com/tor-gu/njoaguof) use-of-force package to the same
+```agency_id```, so use-of-force incidents can be set against what this package knows about
+each agency: its officers and its hiring practices. Here we count 2024 incidents per agency.
 ```{r}
-uof_agency <- agency_alias %>%
-  filter(source == "njoaguof") %>%
-  select(agency_county, agency_name, agency_id)
-
 incidents_2024 <- njoaguof::incident %>%
   filter(format(incident_date_1, "%Y") == "2024") %>%
-  mutate(agency_county = as.character(agency_county)) %>%
-  inner_join(uof_agency, by = c("agency_county", "agency_name")) %>%
+  mutate(agency_id = njlea::resolve_agency("njoaguof", as.character(agency_county),
+                                           agency_name)) %>%
   count(agency_id, name = "incidents")
 ```
 From the ```officer``` table, the size of each agency's force and its share of female
@@ -137,8 +132,7 @@ agency_2024 <- officers_2024 %>%
   left_join(agency_practice %>% filter(year == 2024) %>%
               select(agency_id, hiring_civil_service),
             by = "agency_id") %>%
-  left_join(agency %>% filter(first_year <= 2024, final_year >= 2024) %>%
-              select(agency_id, agency_name, agency_type),
+  left_join(get_agencies(2024) %>% select(agency_id, agency_name, agency_level),
             by = "agency_id")
 ```
 The ten agencies with at least 50 officers and the most incidents per officer:
@@ -155,7 +149,7 @@ And, for municipal agencies, incidents per 100 officers by Civil Service hiring 
 share of officers aged 35 or under:
 ```{r}
 agency_2024 %>%
-  filter(agency_type == "Municipal") %>%
+  filter(agency_level == "Municipal") %>%
   mutate(pct_35_or_under = cut(pct_35_or_under, c(0, 30, 45, 60, 100),
                                include.lowest = TRUE)) %>%
   group_by(hiring_civil_service, pct_35_or_under) %>%
@@ -169,30 +163,19 @@ some agencies' officer counts are incomplete (see the note below).
 ## Notes
 These are the ways in which this package differs from the source data.
 
-### Agency identifiers and names
-The source identifies agencies by county and name only. This package assigns each agency a
-stable ```agency_id```, and records every spelling seen in ```agency_alias```. The
-```agency_name``` in ```agency``` is the 2025 release's spelling, except for these
-agencies, where it fixes a truncation or follows the "Twp PD" naming of the other agencies:
+### Agencies
+The source identifies agencies by county and name only. The ```agency_id```, the agency
+names, levels and functions, and the municipalities served all come from
+[```njlea```](https://github.com/tor-gu/njlea), not from the source. njlea uses its own
+canonical names (such as "Absecon Police Department" for the source's "Absecon City PD"),
+records every source spelling in ```njlea::agency_alias``` (source
+```"njoag-leod-2025"```), and documents its corrections to the source, such as the
+municipalities served under shared-services agreements. ```find_agency()``` searches the
+names and the source spellings. The source's "Chester PD", for instance, is Chester
+Township's department:
 ```{r}
-agency_alias %>%
-  filter(source == "njoag-leod-2025") %>%
-  inner_join(agency, by = "agency_id", suffix = c("_source", "")) %>%
-  filter(agency_name_source != agency_name) %>%
-  select(source_name = agency_name_source, agency_name)
+find_agency("^Chester PD$")
 ```
-
-Agencies that the source lists as "State or Other Agency" have ```agency_county``` `NA`.
-
-### Agency type and municipalities
-```agency_type``` and ```agency_municipality``` are not in the source data; they are
-assigned by this package. A "Municipal" agency serves one municipality, and a "Multiple
-Municipalities" agency also serves municipalities that contract with it for police
-services; ```agency_municipality``` lists the municipalities each serves. "County" and
-"State-wide" agencies are county and state agencies, including county colleges and state
-universities, and "Other" covers interstate authorities and the campus police of private
-institutions. The sources for the shared-services municipalities are recorded in
-```inst/extdata/agency_municipality.csv```.
 
 ### Incomplete agency reports
 The data is as reported by each agency, and some agency-years look incomplete. For example,
@@ -209,9 +192,9 @@ officer %>%
   mutate(median_officers = median(officers)) %>%
   ungroup() %>%
   filter(median_officers >= 10, officers < median_officers / 2) %>%
-  left_join(agency, join_by(agency_id, between(year, first_year, final_year))) %>%
-  select(year, agency_county, agency_name, officers, median_officers) %>%
-  arrange(year, agency_county, agency_name) %>%
+  left_join(agency_names(2021:2025), by = c("agency_id", "year")) %>%
+  select(year, county, agency_name, officers, median_officers) %>%
+  arrange(year, county, agency_name) %>%
   print(n = Inf)
 ```
 

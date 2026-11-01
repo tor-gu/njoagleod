@@ -8,7 +8,8 @@
 #' @format A dataframe with 26 columns
 #' \describe{
 #'  \item{year}{Year}
-#'  \item{agency_id}{Stable agency identifier, as in [agency]}
+#'  \item{agency_id}{Agency identifier from the njlea package, such as "NJLEA0001"; see
+#'  [get_agencies()] for names}
 #'  \item{applications_received}{Did the agency receive any applications for employment?}
 #'  \item{hiring_civil_service}{Is hiring governed by Civil Service?}
 #'  \item{hire_method_civil_service_list}{Hires from a Civil Service exam list}
