@@ -39,74 +39,18 @@ to_logical <- function(x, true, false, na_values = c(NA, "Not Provided", "Blank"
 
 
 ## -----------------------------------------------------------------------------
-read_registry <- function(file, col_types) {
-  system.file("extdata", file, package = "njoagleod") %>%
-    readr::read_csv(col_types = col_types, na = "")
+add_agency_id <- function(tbl) {
+  tbl %>%
+    mutate(agency_id = njlea::resolve_agency("njoag-leod-2025", County, Agency,
+                                             year = Year, strict = TRUE)) %>%
+    select(-County, -Agency) %>%
+    relocate(Year, agency_id)
 }
-county_levels <- njmunicipalities::counties$county
-agency_type_levels <- c("State-wide", "County", "Municipal",
-                        "Multiple Municipalities", "Other")
-
-agency <- read_registry("agency_registry.csv", "ciicccc") %>%
-  mutate(agency_county = to_factor(agency_county, county_levels, NA),
-         agency_type = to_factor(agency_type, agency_type_levels, character()))
-agency_alias <- read_registry("agency_alias.csv", "cccc")
-agency_municipality <- read_registry("agency_municipality.csv", "cciicc") %>%
-  select(agency_id, GEOID_Y2K, first_year, final_year)
 
 
 ## -----------------------------------------------------------------------------
-stopifnot(
-  !anyDuplicated(agency %>% select(agency_id, first_year)),
-  !anyDuplicated(agency_alias %>% select(source, agency_county, agency_name)),
-  !anyDuplicated(agency_municipality %>% select(agency_id, GEOID_Y2K, first_year)),
-  all(agency$first_year <= agency$final_year),
-  all(agency_municipality$first_year <= agency_municipality$final_year)
-)
-stopifnot(
-  0 == agency %>%
-    inner_join(agency, by = join_by(agency_id, first_year < first_year,
-                                    final_year >= first_year)) %>%
-    nrow()
-)
-
-
-## -----------------------------------------------------------------------------
-stopifnot(all(agency_alias$agency_id %in% agency$agency_id))
-agency_span <- agency %>%
-  group_by(agency_id) %>%
-  summarize(agency_first = min(first_year), agency_final = max(final_year))
-stopifnot(
-  agency_municipality %>%
-    left_join(agency_span, by = "agency_id") %>%
-    with(all(first_year >= agency_first & final_year <= agency_final))
-)
-
-
-## -----------------------------------------------------------------------------
-stopifnot(
-  all(agency_municipality$GEOID_Y2K %in%
-        njmunicipalities::get_municipalities(2000)$GEOID)
-)
-municipality_counts <- agency %>%
-  distinct(agency_id, agency_type) %>%
-  left_join(agency_municipality %>% count(agency_id), by = "agency_id") %>%
-  mutate(n = coalesce(n, 0L))
-stopifnot(
-  municipality_counts %>%
-    with(all(n[agency_type == "Municipal"] == 1) &&
-           all(n[agency_type == "Multiple Municipalities"] >= 2))
-)
-
-
-## -----------------------------------------------------------------------------
-add_agency_id <- function(tbl, source_name = "njoag-leod-2025") {
-  aliases <- agency_alias %>%
-    filter(source == source_name) %>%
-    select(County = agency_county, Agency = agency_name, agency_id)
-  result <- tbl %>% left_join(aliases, by = c("County", "Agency"))
-  stopifnot(nrow(result) == nrow(tbl), !anyNA(result$agency_id))
-  result %>% select(-County, -Agency) %>% relocate(Year, agency_id)
+agency_names <- function(years) {
+  bind_rows(lapply(years, function(y) mutate(njlea::get_agencies(y), year = y)))
 }
 
 
@@ -240,45 +184,24 @@ agency_years <- bind_rows(
   applicant %>% distinct(agency_id, year)
 ) %>%
   distinct()
-stopifnot(
-  agency_years %>%
-    left_join(agency, by = join_by(agency_id, between(year, first_year, final_year))) %>%
-    count(agency_id, year) %>%
-    with(all(n == 1)),
-  agency_years %>%
-    inner_join(agency, by = join_by(agency_id, between(year, first_year, final_year))) %>%
-    nrow() == nrow(agency_years)
-)
+njlea::check_agency_years(agency_years$agency_id, agency_years$year)
 
 
 ## -----------------------------------------------------------------------------
-stopifnot(setequal(agency$agency_id, agency_years$agency_id))
+leod_agencies <- njlea::agency_alias %>%
+  filter(source == "njoag-leod-2025") %>%
+  distinct(agency_id)
+stopifnot(setequal(leod_agencies$agency_id, agency_years$agency_id))
 
 
 ## -----------------------------------------------------------------------------
 agency_practice %>%
   anti_join(officer, by = c("agency_id", "year")) %>%
-  left_join(agency, by = join_by(agency_id, between(year, first_year, final_year))) %>%
-  select(year, agency_county, agency_name)
+  left_join(agency_names(2022:2025), by = c("agency_id", "year")) %>%
+  select(year, county, agency_name)
 
 
 ## -----------------------------------------------------------------------------
-uof_agencies <- njoaguof::incident %>%
-  distinct(agency_county, agency_name) %>%
-  mutate(agency_county = as.character(agency_county)) %>%
-  filter(!str_detect(agency_name, "Corrections"),
-         agency_name != "State Parole Board")
-uof_aliases <- agency_alias %>% filter(source == "njoaguof")
-stopifnot(
-  0 == uof_agencies %>%
-    anti_join(uof_aliases, by = c("agency_county", "agency_name")) %>%
-    nrow()
-)
-
-
-## -----------------------------------------------------------------------------
-agency_alias <- agency_alias %>% arrange(agency_id, source, agency_county, agency_name)
-agency_municipality <- agency_municipality %>% arrange(agency_id, GEOID_Y2K, first_year)
 agency_practice <- agency_practice %>% arrange(year, agency_id)
 officer <- officer %>% arrange(year, agency_id)
 applicant <- applicant %>% arrange(year, agency_id)
