@@ -19,7 +19,6 @@ Suggests:
     devtools,
     dplyr (>= 1.1.0),
     knitr,
-    magrittr,
     njoaguof,
     readxl,
     rmarkdown,

@@ -8,14 +8,13 @@ knitr::opts_chunk$set(
 ## ----setup, include=FALSE-----------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
-library(magrittr)
 library(stringr)
 
 
 ## -----------------------------------------------------------------------------
 read_release <- function(file) {
-  system.file("extdata", file, package = "njoagleod") %>%
-    readxl::read_excel() %>%
+  system.file("extdata", file, package = "njoagleod") |>
+    readxl::read_excel() |>
     mutate(Year = as.integer(Year))
 }
 agency_raw <- read_release(
@@ -40,10 +39,10 @@ to_logical <- function(x, true, false, na_values = c(NA, "Not Provided", "Blank"
 
 ## -----------------------------------------------------------------------------
 add_agency_id <- function(tbl) {
-  tbl %>%
+  tbl |>
     mutate(agency_id = njlea::resolve_agency("njoag-leod-2025", County, Agency,
-                                             year = Year, strict = TRUE)) %>%
-    select(-County, -Agency) %>%
+                                             year = Year, strict = TRUE)) |>
+    select(-County, -Agency) |>
     relocate(Year, agency_id)
 }
 
@@ -90,9 +89,9 @@ practice_columns <- c(
 stopifnot(setequal(names(agency_raw),
                    c("Year", "County", "Agency", practice_columns)))
 
-agency_practice <- agency_raw %>%
-  add_agency_id() %>%
-  rename(year = Year, all_of(practice_columns)) %>%
+agency_practice <- agency_raw |>
+  add_agency_id() |>
+  rename(year = Year, all_of(practice_columns)) |>
   mutate(across(all_of(names(practice_columns)), ~ to_logical(.x, "Yes", "No")))
 
 
@@ -109,11 +108,11 @@ rank_levels <- c("Police Aide", "Officer", "Corporal", "Investigator", "Detectiv
                  "Undersheriff", "Sheriff")
 
 to_age_range <- function(x) {
-  to_factor(x, age_range_levels) %>% factor(levels = age_range_levels, ordered = TRUE)
+  to_factor(x, age_range_levels) |> factor(levels = age_range_levels, ordered = TRUE)
 }
 
-officer <- officer_raw %>%
-  add_agency_id() %>%
+officer <- officer_raw |>
+  add_agency_id() |>
   transmute(
     year = Year,
     agency_id,
@@ -142,8 +141,8 @@ reason_levels <- c("Academy Failure", "Applicant Withdrawal", "Defer",
                    "Interview Panel Recommendation", "Physical Qualification Exam",
                    "Residency Requirement", "Written Exam", "Other")
 
-applicant <- applicant_raw %>%
-  add_agency_id() %>%
+applicant <- applicant_raw |>
+  add_agency_id() |>
   transmute(
     year = Year,
     agency_id,
@@ -160,9 +159,9 @@ applicant <- applicant_raw %>%
 
 ## -----------------------------------------------------------------------------
 stopifnot(
-  !anyDuplicated(agency_practice %>% select(year, agency_id)),
-  !anyDuplicated(officer %>% select(-officer_count)),
-  !anyDuplicated(applicant %>% select(-applicant_count))
+  !anyDuplicated(agency_practice |> select(year, agency_id)),
+  !anyDuplicated(officer |> select(-officer_count)),
+  !anyDuplicated(applicant |> select(-applicant_count))
 )
 
 
@@ -173,36 +172,36 @@ stopifnot(
   sum(officer$officer_count) == sum(officer_raw$`Number of Officers`),
   sum(applicant$applicant_count) == sum(applicant_raw$`Number of Applicants`)
 )
-officer %>% count(year, wt = officer_count, name = "officers")
-applicant %>% count(year, wt = applicant_count, name = "applicants")
+officer |> count(year, wt = officer_count, name = "officers")
+applicant |> count(year, wt = applicant_count, name = "applicants")
 
 
 ## -----------------------------------------------------------------------------
 agency_years <- bind_rows(
-  agency_practice %>% distinct(agency_id, year),
-  officer %>% distinct(agency_id, year),
-  applicant %>% distinct(agency_id, year)
-) %>%
+  agency_practice |> distinct(agency_id, year),
+  officer |> distinct(agency_id, year),
+  applicant |> distinct(agency_id, year)
+) |>
   distinct()
 njlea::check_agency_years(agency_years$agency_id, agency_years$year)
 
 
 ## -----------------------------------------------------------------------------
-leod_agencies <- njlea::agency_alias %>%
-  filter(source == "njoag-leod-2025") %>%
+leod_agencies <- njlea::agency_alias |>
+  filter(source == "njoag-leod-2025") |>
   distinct(agency_id)
 stopifnot(setequal(leod_agencies$agency_id, agency_years$agency_id))
 
 
 ## -----------------------------------------------------------------------------
-agency_practice %>%
-  anti_join(officer, by = c("agency_id", "year")) %>%
-  left_join(agency_names(2022:2025), by = c("agency_id", "year")) %>%
+agency_practice |>
+  anti_join(officer, by = c("agency_id", "year")) |>
+  left_join(agency_names(2022:2025), by = c("agency_id", "year")) |>
   select(year, county, agency_name)
 
 
 ## -----------------------------------------------------------------------------
-agency_practice <- agency_practice %>% arrange(year, agency_id)
-officer <- officer %>% arrange(year, agency_id)
-applicant <- applicant %>% arrange(year, agency_id)
+agency_practice <- agency_practice |> arrange(year, agency_id)
+officer <- officer |> arrange(year, agency_id)
+applicant <- applicant |> arrange(year, agency_id)
 

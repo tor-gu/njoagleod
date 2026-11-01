@@ -97,8 +97,8 @@ So count people with the count as a weight. Counting rows counts
 combinations, not officers.
 
 ``` r
-officer %>%
-  filter(year == 2025) %>%
+officer |>
+  filter(year == 2025) |>
   count(officer_race, wt = officer_count, name = "officers")
 #> # A tibble: 9 × 2
 #>   officer_race                              officers
@@ -123,10 +123,10 @@ agency_names <- function(years) {
   bind_rows(lapply(years, function(y) mutate(get_agencies(y), year = y)))
 }
 
-officer %>%
-  count(year, agency_id, wt = officer_count, name = "officers") %>%
-  left_join(agency_names(2021:2025), by = c("agency_id", "year")) %>%
-  select(year, county, agency_name, officers) %>%
+officer |>
+  count(year, agency_id, wt = officer_count, name = "officers") |>
+  left_join(agency_names(2021:2025), by = c("agency_id", "year")) |>
+  select(year, county, agency_name, officers) |>
   arrange(desc(officers))
 #> # A tibble: 2,630 × 4
 #>     year county       agency_name              officers
@@ -150,8 +150,8 @@ officer %>%
 serves, with their names and GEOIDs as of the year asked for:
 
 ``` r
-get_agency_municipalities(2025) %>%
-  left_join(get_agencies(2025) %>% select(agency_id, agency_name), by = "agency_id") %>%
+get_agency_municipalities(2025) |>
+  left_join(get_agencies(2025) |> select(agency_id, agency_name), by = "agency_id") |>
   select(agency_name, GEOID, county, municipality, link_type)
 #> # A tibble: 471 × 5
 #>    agency_name                           GEOID     county municipality link_type
@@ -172,10 +172,10 @@ get_agency_municipalities(2025) %>%
 Agencies that serve more than one municipality have one row for each:
 
 ``` r
-get_agencies(2025) %>%
-  filter(multi_municipal) %>%
+get_agencies(2025) |>
+  filter(multi_municipal) |>
   inner_join(get_agency_municipalities(2025), by = "agency_id",
-             suffix = c("_agency", "")) %>%
+             suffix = c("_agency", "")) |>
   select(agency_name, municipality, link_type)
 #> # A tibble: 22 × 3
 #>    agency_name                         municipality           link_type
@@ -202,10 +202,10 @@ this package knows about each agency: its officers and its hiring
 practices. Here we count 2024 incidents per agency.
 
 ``` r
-incidents_2024 <- njoaguof::incident %>%
-  filter(format(incident_date_1, "%Y") == "2024") %>%
+incidents_2024 <- njoaguof::incident |>
+  filter(format(incident_date_1, "%Y") == "2024") |>
   mutate(agency_id = njlea::resolve_agency("njoaguof", as.character(agency_county),
-                                           agency_name)) %>%
+                                           agency_name)) |>
   count(agency_id, name = "incidents")
 ```
 
@@ -214,9 +214,9 @@ of female officers and of officers aged 35 or under; from
 `agency_practice`, whether hiring is governed by Civil Service.
 
 ``` r
-officers_2024 <- officer %>%
-  filter(year == 2024) %>%
-  group_by(agency_id) %>%
+officers_2024 <- officer |>
+  filter(year == 2024) |>
+  group_by(agency_id) |>
   summarize(
     officers = sum(officer_count),
     pct_female = 100 * sum(officer_count[officer_gender %in% "Female"]) / officers,
@@ -224,14 +224,14 @@ officers_2024 <- officer %>%
       100 * sum(officer_count[officer_age_range %in% c("25 or less", "26-35")]) / officers
   )
 
-agency_2024 <- officers_2024 %>%
-  left_join(incidents_2024, by = "agency_id") %>%
+agency_2024 <- officers_2024 |>
+  left_join(incidents_2024, by = "agency_id") |>
   mutate(incidents = coalesce(incidents, 0L),
-         incidents_per_100_officers = 100 * incidents / officers) %>%
-  left_join(agency_practice %>% filter(year == 2024) %>%
+         incidents_per_100_officers = 100 * incidents / officers) |>
+  left_join(agency_practice |> filter(year == 2024) |>
               select(agency_id, hiring_civil_service),
-            by = "agency_id") %>%
-  left_join(get_agencies(2024) %>% select(agency_id, agency_name, agency_level),
+            by = "agency_id") |>
+  left_join(get_agencies(2024) |> select(agency_id, agency_name, agency_level),
             by = "agency_id")
 ```
 
@@ -239,12 +239,12 @@ The ten agencies with at least 50 officers and the most incidents per
 officer:
 
 ``` r
-agency_2024 %>%
-  filter(officers >= 50) %>%
-  arrange(desc(incidents_per_100_officers)) %>%
+agency_2024 |>
+  filter(officers >= 50) |>
+  arrange(desc(incidents_per_100_officers)) |>
   select(agency_name, officers, pct_female, pct_35_or_under, hiring_civil_service,
-         incidents_per_100_officers) %>%
-  head(10) %>%
+         incidents_per_100_officers) |>
+  head(10) |>
   knitr::kable(digits = 0)
 ```
 
@@ -265,11 +265,11 @@ And, for municipal agencies, incidents per 100 officers by Civil Service
 hiring and by the share of officers aged 35 or under:
 
 ``` r
-agency_2024 %>%
-  filter(agency_level == "Municipal") %>%
+agency_2024 |>
+  filter(agency_level == "Municipal") |>
   mutate(pct_35_or_under = cut(pct_35_or_under, c(0, 30, 45, 60, 100),
-                               include.lowest = TRUE)) %>%
-  group_by(hiring_civil_service, pct_35_or_under) %>%
+                               include.lowest = TRUE)) |>
+  group_by(hiring_civil_service, pct_35_or_under) |>
   summarize(agencies = n(),
             incidents_per_100_officers = 100 * sum(incidents) / sum(officers),
             .groups = "drop")
@@ -330,15 +330,15 @@ officers in most years, such as Fair Lawn PD, which reports 7 to 17
 officers in 2021–2024 and 56 in 2025.
 
 ``` r
-officer %>%
-  count(agency_id, year, wt = officer_count, name = "officers") %>%
-  group_by(agency_id) %>%
-  mutate(median_officers = median(officers)) %>%
-  ungroup() %>%
-  filter(median_officers >= 10, officers < median_officers / 2) %>%
-  left_join(agency_names(2021:2025), by = c("agency_id", "year")) %>%
-  select(year, county, agency_name, officers, median_officers) %>%
-  arrange(year, county, agency_name) %>%
+officer |>
+  count(agency_id, year, wt = officer_count, name = "officers") |>
+  group_by(agency_id) |>
+  mutate(median_officers = median(officers)) |>
+  ungroup() |>
+  filter(median_officers >= 10, officers < median_officers / 2) |>
+  left_join(agency_names(2021:2025), by = c("agency_id", "year")) |>
+  select(year, county, agency_name, officers, median_officers) |>
+  arrange(year, county, agency_name) |>
   print(n = Inf)
 #> # A tibble: 16 × 5
 #>     year county            agency_name                  officers median_officers
