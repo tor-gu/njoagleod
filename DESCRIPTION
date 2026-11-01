@@ -11,6 +11,10 @@ Description: This is cleaned-up version of the NJ OAG Law Enforcement Officer
 License: CC0
 Encoding: UTF-8
 LazyData: true
+Imports: 
+    njlea (>= 0.1.0)
+Remotes: 
+    tor-gu/njlea
 Suggests: 
     devtools,
     dplyr (>= 1.1.0),
@@ -24,6 +28,6 @@ Suggests:
     stringr,
     usethis
 Depends: 
-    R (>= 3.5)
+    R (>= 4.1.0)
 VignetteBuilder: knitr
 Config/roxygen2/version: 8.1.0
