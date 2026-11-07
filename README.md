@@ -195,17 +195,14 @@ get_agencies(2025) |>
 
 ### Use with `njoaguof`
 
-njlea maps the agency names used by the
-[`njoaguof`](https://github.com/tor-gu/njoaguof) use-of-force package to
-the same `agency_id`, so use-of-force incidents can be set against what
-this package knows about each agency: its officers and its hiring
-practices. Here we count 2024 incidents per agency.
+The [`njoaguof`](https://github.com/tor-gu/njoaguof) use-of-force
+package uses the same `agency_id`, so use-of-force incidents can be set
+against what this package knows about each agency: its officers and its
+hiring practices. Here we count 2024 incidents per agency.
 
 ``` r
 incidents_2024 <- njoaguof::incident |>
   filter(format(incident_date_1, "%Y") == "2024") |>
-  mutate(agency_id = njlea::resolve_agency("njoaguof", as.character(agency_county),
-                                           agency_name)) |>
   count(agency_id, name = "incidents")
 ```
 
@@ -281,7 +278,7 @@ agency_2024 |>
 #> 3 FALSE                (45,60]              125                       51.3
 #> 4 FALSE                (60,100]              44                       56.2
 #> 5 TRUE                 [0,30]                15                       50.3
-#> 6 TRUE                 (30,45]               69                       79.6
+#> 6 TRUE                 (30,45]               69                       79.7
 #> 7 TRUE                 (45,60]               66                       96.7
 #> 8 TRUE                 (60,100]              23                      109.
 ```
