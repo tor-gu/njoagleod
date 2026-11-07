@@ -19,7 +19,7 @@ Suggests:
     devtools,
     dplyr (>= 1.1.0),
     knitr,
-    njoaguof,
+    njoaguof (>= 2.2.0),
     readxl,
     rmarkdown,
     stringr,
