@@ -44,6 +44,10 @@ This package re-exports njlea's functions for looking agencies up:
 njlea's tables (```njlea::agency```, ```njlea::agency_alias``` and the others) have the
 full registry.
 
+The same data is also available as a web API, at
+[```api.tor-gu.com/nj/officer_diversity```](https://tor-gu.com/apis/njoagleod.html)
+([source](https://github.com/tor-gu/njoagleod-api)).
+
 ## Examples
 ```{r, message = FALSE}
 library(njoagleod)
